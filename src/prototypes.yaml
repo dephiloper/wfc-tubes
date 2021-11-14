@@ -1,31 +1,31 @@
-prototypes:
-  - tube_x:
-      mesh: "tube.gltf"
-      rotation: { x: 0, y: 0, z: 90 }
-  - tube_y:
-      mesh: "tube.gltf"
-      rotation: { x: 0, y: 0, z: 0 }
-  - tube_z:
-      mesh: "tube.gltf"
-      rotation: { x: 90, y: 0, z: 0 }
+# tube_x:
+  - mesh: "tube.gltf"
+    rotation: { x: 0, y: 0, z: 90 }
+# tube_y:
+  - mesh: "tube.gltf"
+    rotation: { x: 0, y: 0, z: 0 }
+# tube_z:
+  - mesh: "tube.gltf"
+    rotation: { x: 90, y: 0, z: 0 }
 
-  - tube_closed_left_x:
-      mesh: "tube_closed.gltf"
-      rotation: { x: 0, y: 0, z: 90 }
-  - tube_closed_right_x:
-      mesh: "tube_closed.gltf"
-      rotation: { x: 0, y: 0, z: -90 }
 
-  - tube_closed_bottom_y:
-      mesh: "tube_closed.gltf"
-      rotation: { x: 0, y: 0, z: 0 }
-  - tube_closed_top_y:
-      mesh: "tube_closed.gltf"
-      rotation: { x: 90, y: 0, z: 0 }
+# tube_closed_left_x:
+  - mesh: "tube_closed.gltf"
+    rotation: { x: 0, y: 0, z: 90 }
+# tube_closed_right_x:
+  - mesh: "tube_closed.gltf"
+    rotation: { x: 0, y: 0, z: -90 }
 
-  - tube_closed_back_z:
-      mesh: "tube_closed.gltf"
-      rotation: { x: 0, y: 0, z: -90 }
-  - tube_closed_front_z:
-      mesh: "tube_closed.gltf"
-      rotation: { x: 0, y: 0, z: 90 }
+# tube_closed_bottom_y:
+  - mesh: "tube_closed.gltf"
+    rotation: { x: 0, y: 0, z: 0 }
+# tube_closed_top_y:
+  - mesh: "tube_closed.gltf"
+    rotation: { x: 90, y: 0, z: 0 }
+
+# tube_closed_back_z:
+  - mesh: "tube_closed.gltf"
+    rotation: { x: 0, y: 0, z: -90 }
+# tube_closed_front_z:
+  - mesh: "tube_closed.gltf"
+    rotation: { x: 0, y: 0, z: 90 }

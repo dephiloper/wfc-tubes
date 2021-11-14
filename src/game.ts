@@ -1,14 +1,16 @@
 import { Input, IInput } from './input';
 import * as THREE from 'three';
-import { Camera, Clock } from 'three';
+import { Clock, OrthographicCamera, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { Prototype } from './prototype';
 import YAML from 'yaml';
+// import { Prototype } from 'prototype';
 
 class Game {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
   clock: Clock = new Clock();
-  camera: Camera;
+  camera: OrthographicCamera;
   input: IInput;
   group: THREE.Group;
   loader: GLTFLoader;
@@ -34,8 +36,14 @@ class Game {
 
     this.camera.position.set(10, 10, 10);
     this.camera.lookAt(0, 0, 0);
+    this.camera.zoom = 2;
+    this.camera.updateProjectionMatrix();
+
 
     this.scene.add(this.camera);
+
+    const axesHelper = new THREE.AxesHelper(5);
+    this.scene.add(axesHelper);
 
     this.setupLight();
 
@@ -44,38 +52,47 @@ class Game {
     this.renderer.render(this.scene, this.camera);
     document.body.appendChild(this.renderer.domElement);
 
+    const yaml = await fetch('./prototypes.yaml');
+    const prots = YAML.parse(await yaml.text()) as Array<Prototype>;
+
+    // for (let x = 0; x < 3; x++) {
+    //   for (let y = 0; y < 3; y++) {
+    //     const prot = prots[x + 3 * y];
+    //     const mesh = await this.loadMesh(`models/${prot.mesh}`, prot.rotation);
+    //     mesh.position.copy(new Vector3(x - 1, y - 1, 0));
+    //     this.group.add(mesh);
+    //   }
+    // }
+
+    const mesh = await this.loadMesh(`models/${prots[2].mesh}`, prots[2].rotation);
+    this.group.add(mesh);
+
     this.renderer.setAnimationLoop(() => this.process());
 
-    this.loader.load('models/tube.gltf', (gltf: GLTF): void => {
-      this.group.add(gltf.scene);
-      console.log("added");
-    },
-      // called while loading is progressing
-      (xhr: ProgressEvent) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
-      // called when loading has errors
-      (error: ErrorEvent) => console.log('An error happened while loading the mesh', error)
-    );
-
     this.scene.add(this.group);
-
-    const yaml = await fetch('./prototypes.yaml');
-    console.log(YAML.parse(await yaml.text()));
-
   }
 
   private setupLight(): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    this.scene.add(ambientLight);
+    // const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight.castShadow = true;
-    directionalLight.position.set(20, 40, 10);
-    this.scene.add(directionalLight);
+    // const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    // directionalLight.castShadow = true;
+    // directionalLight.position.set(20, 40, 10);
+    // this.scene.add(directionalLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+    hemiLight.position.set(0, 300, 0);
+    this.scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff);
+    dirLight.position.set(75, 300, -75);
+    this.scene.add(dirLight);
 
   }
 
   private process(): void {
-    this.renderer.setClearColor(0xffffff, 1);
+    // this.renderer.setClearColor(0xffffff, 1);
     const delta = this.clock.getDelta();
     this.renderer.render(this.scene, this.camera);
 
@@ -84,7 +101,7 @@ class Game {
 
     }
 
-    this.group.rotation.y += delta * 0.5;
+    this.group.rotation.y += delta * 0.;
 
     // if (this.input.mouseDown) {
     //   const dir: number = (this.input.prevMousePos.x - this.input.mousePos.x) / window.innerWidth;
@@ -105,6 +122,25 @@ class Game {
     //   moveDir.multiplyScalar(-1);
     //   this.camera.translateOnAxis(moveDir, moveDist);
     // }
+  }
+
+  private async loadMesh(mesh: string, rotation: Vector3): Promise<THREE.Mesh> {
+    return new Promise<THREE.Mesh>((resolve, reject) => {
+      this.loader.load(mesh, (gltf: GLTF): void => {
+        // TODO there is no other way of typing here
+        //@ts-ignore
+        const mesh: THREE.Mesh = gltf.scene.children[0];
+        mesh.material = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+
+        // TODO check if rotation works
+        mesh.rotateX(THREE.MathUtils.degToRad(rotation.x));
+        mesh.rotateY(THREE.MathUtils.degToRad(rotation.y));
+        mesh.rotateZ(THREE.MathUtils.degToRad(rotation.z));
+        resolve(mesh);
+      },
+        (xhr: ProgressEvent) => { },
+        (error: ErrorEvent) => reject(new Error(`An error happened while loading the mesh ${error}`)))
+    })
   }
 }
 
