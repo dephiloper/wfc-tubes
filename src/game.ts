@@ -30,6 +30,7 @@ class Game {
     const ratio: number = window.innerHeight / window.innerWidth;
     const width: number = 40;
     const height: number = width * ratio;
+    const gridSize: number = 3;
 
     this.camera = new THREE.OrthographicCamera(
       width / - 2,
@@ -60,32 +61,47 @@ class Game {
     const yaml = await fetch('./prototypes.yaml');
     this.prots = Prototype.parseFromObject(YAML.parse(await yaml.text()));
 
+    const offset: number = (gridSize % 2 == 0) ? 0 : 0.5;
+    const spacing: number = 2;
 
-    let mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
-    let neighborMeshes = new THREE.Group();
-
-    setInterval(async () => {
-      let prot: Prototype = this.prots[this.index];
-      if (mesh) {
-        this.group.remove(mesh);
-        this.group.remove(neighborMeshes);
+    for (let x = 0; x < gridSize; x++) {
+      const dx = x - gridSize / 2 + offset;
+      for (let y = 0; y < gridSize; y++) {
+        const dy = y - gridSize / 2 + offset;
+        for (let z = 0; z < gridSize; z++) {
+          const dz = z - gridSize / 2 + offset;
+          const mesh = await this.loadMesh(`models/${this.prots[0].mesh}`, this.prots[0].rotation);
+          mesh.position.add(new Vector3(dx * spacing, dy * spacing, dz * spacing));
+          this.group.add(mesh);
+        }
       }
-      
-      mesh = await this.loadMesh(`models/${prot.mesh}`, prot.rotation);
-      this.group.add(mesh);
-      neighborMeshes = new THREE.Group();
+    }
 
-      for (let [index, neighbors] of prot.neighbors) {
-        if (neighbors.length == 0) continue;
-        const side: Vector3 = Prototype.indexToVec3(index);
-        const neighborMesh = await this.loadMesh(`models/${neighbors[0].mesh}`, neighbors[0].rotation);
-        neighborMesh.position.add(side.multiplyScalar(3));
-        neighborMeshes.add(neighborMesh);
-      }
-      this.group.add(neighborMeshes);
+    // let mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+    // let neighborMeshes = new THREE.Group();
 
-      this.index = (this.index + 1) % this.prots.length;
-    }, 5000);
+    // setInterval(async () => {
+    //   let prot: Prototype = this.prots[this.index];
+    //   if (mesh) {
+    //     this.group.remove(mesh);
+    //     this.group.remove(neighborMeshes);
+    //   }
+
+    //   mesh = await this.loadMesh(`models/${prot.mesh}`, prot.rotation);
+    //   this.group.add(mesh);
+    //   neighborMeshes = new THREE.Group();
+
+    //   for (let [index, neighbors] of prot.neighbors) {
+    //     if (neighbors.length == 0) continue;
+    //     const side: Vector3 = Prototype.indexToVec3(index);
+    //     const neighborMesh = await this.loadMesh(`models/${neighbors[3].mesh}`, neighbors[3].rotation);
+    //     neighborMesh.position.add(side.multiplyScalar(3));
+    //     neighborMeshes.add(neighborMesh);
+    //   }
+    //   this.group.add(neighborMeshes);
+
+    //   this.index = (this.index + 1) % this.prots.length;
+    // }, 2000);
 
     this.renderer.setAnimationLoop(async () => await this.process());
 
@@ -114,7 +130,7 @@ class Game {
     const delta = this.clock.getDelta();
     this.timePassed += delta;
     this.renderer.render(this.scene, this.camera);
-    //this.group.rotation.y += delta * 0.2;
+    this.group.rotation.y += delta * 0.05;
   }
 
   private async loadMesh(mesh: string, rotation: Vector3): Promise<THREE.Mesh> {
