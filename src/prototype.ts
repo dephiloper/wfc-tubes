@@ -56,6 +56,25 @@ export class Prototype {
 
     return prototypes;
   }
+
+  static indexToVec3(index: number): Vector3 {
+    switch (index) {
+      case 0:
+        return new Vector3(1, 0, 0);
+      case 1:
+        return new Vector3(0, 1, 0);
+      case 2:
+        return new Vector3(0, 0, 1);
+      case 3:
+        return new Vector3(-1, 0, 0);
+      case 4:
+        return new Vector3(0, -1, 0);
+      case 5:
+        return new Vector3(0, 0, -1);
+      default:
+        return new Vector3();
+    }
+  }
 }
 
 // 0 -   1,  0,  0

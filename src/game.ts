@@ -59,10 +59,33 @@ class Game {
 
     const yaml = await fetch('./prototypes.yaml');
     this.prots = Prototype.parseFromObject(YAML.parse(await yaml.text()));
-    console.log(this.prots);
 
-    const mesh = await this.loadMesh(`models/${this.prots[9].mesh}`, this.prots[9].rotation);
-    this.group.add(mesh);
+
+    let mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+    let neighborMeshes = new THREE.Group();
+
+    setInterval(async () => {
+      let prot: Prototype = this.prots[this.index];
+      if (mesh) {
+        this.group.remove(mesh);
+        this.group.remove(neighborMeshes);
+      }
+      
+      mesh = await this.loadMesh(`models/${prot.mesh}`, prot.rotation);
+      this.group.add(mesh);
+      neighborMeshes = new THREE.Group();
+
+      for (let [index, neighbors] of prot.neighbors) {
+        if (neighbors.length == 0) continue;
+        const side: Vector3 = Prototype.indexToVec3(index);
+        const neighborMesh = await this.loadMesh(`models/${neighbors[0].mesh}`, neighbors[0].rotation);
+        neighborMesh.position.add(side.multiplyScalar(3));
+        neighborMeshes.add(neighborMesh);
+      }
+      this.group.add(neighborMeshes);
+
+      this.index = (this.index + 1) % this.prots.length;
+    }, 5000);
 
     this.renderer.setAnimationLoop(async () => await this.process());
 
