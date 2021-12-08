@@ -4,8 +4,10 @@ import { Clock, OrthographicCamera, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Prototype } from './prototype';
 import YAML from 'yaml';
-// import { Prototype } from 'prototype';
 
+// red:   x
+// green: y
+// blue:  z
 class Game {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
@@ -14,6 +16,10 @@ class Game {
   input: IInput;
   group: THREE.Group;
   loader: GLTFLoader;
+  prots: Prototype[];
+  timePassed: number = 6;
+  mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+  index: number = 0;
 
   public async Init(): Promise<void> {
     this.scene = new THREE.Scene();
@@ -39,11 +45,10 @@ class Game {
     this.camera.zoom = 2;
     this.camera.updateProjectionMatrix();
 
-
     this.scene.add(this.camera);
 
     const axesHelper = new THREE.AxesHelper(5);
-    this.scene.add(axesHelper);
+    this.group.add(axesHelper);
 
     this.setupLight();
 
@@ -53,21 +58,13 @@ class Game {
     document.body.appendChild(this.renderer.domElement);
 
     const yaml = await fetch('./prototypes.yaml');
-    const prots = YAML.parse(await yaml.text()) as Array<Prototype>;
+    this.prots = Prototype.parseFromObject(YAML.parse(await yaml.text()));
+    console.log(this.prots);
 
-    // for (let x = 0; x < 3; x++) {
-    //   for (let y = 0; y < 3; y++) {
-    //     const prot = prots[x + 3 * y];
-    //     const mesh = await this.loadMesh(`models/${prot.mesh}`, prot.rotation);
-    //     mesh.position.copy(new Vector3(x - 1, y - 1, 0));
-    //     this.group.add(mesh);
-    //   }
-    // }
-
-    const mesh = await this.loadMesh(`models/${prots[2].mesh}`, prots[2].rotation);
+    const mesh = await this.loadMesh(`models/${this.prots[9].mesh}`, this.prots[9].rotation);
     this.group.add(mesh);
 
-    this.renderer.setAnimationLoop(() => this.process());
+    this.renderer.setAnimationLoop(async () => await this.process());
 
     this.scene.add(this.group);
   }
@@ -88,48 +85,20 @@ class Game {
     const dirLight = new THREE.DirectionalLight(0xffffff);
     dirLight.position.set(75, 300, -75);
     this.scene.add(dirLight);
-
   }
 
-  private process(): void {
-    // this.renderer.setClearColor(0xffffff, 1);
+  private async process(): Promise<void> {
     const delta = this.clock.getDelta();
+    this.timePassed += delta;
     this.renderer.render(this.scene, this.camera);
-
-    if (this.input.mouseDown) {
-      //const dir: number = (this.input.prevMousePos.x - this.input.mousePos.x) / window.innerWidth;
-
-    }
-
-    this.group.rotation.y += delta * 0.;
-
-    // if (this.input.mouseDown) {
-    //   const dir: number = (this.input.prevMousePos.x - this.input.mousePos.x) / window.innerWidth;
-
-    //   let moveDir = new THREE.Vector3(
-    //     - this.camera.position.x,
-    //     - this.camera.position.y,
-    //     - this.camera.position.z
-    //   );
-
-    //   moveDir.normalize();
-
-    //   const moveDist = this.camera.position.distanceTo(new Vector3());
-    //   this.camera.translateOnAxis(moveDir, moveDist);
-    //   /// step 3: rotate camera
-    //   this.camera.rotateY(dir);
-    //   /// step4: move camera along the opposite direction
-    //   moveDir.multiplyScalar(-1);
-    //   this.camera.translateOnAxis(moveDir, moveDist);
-    // }
+    //this.group.rotation.y += delta * 0.2;
   }
 
   private async loadMesh(mesh: string, rotation: Vector3): Promise<THREE.Mesh> {
     return new Promise<THREE.Mesh>((resolve, reject) => {
       this.loader.load(mesh, (gltf: GLTF): void => {
         // TODO there is no other way of typing here
-        //@ts-ignore
-        const mesh: THREE.Mesh = gltf.scene.children[0];
+        const mesh: THREE.Mesh = gltf.scene.children[0] as THREE.Mesh;
         mesh.material = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
         // TODO check if rotation works
