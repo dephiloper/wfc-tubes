@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Clock, OrthographicCamera, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Prototype } from './prototype';
-import YAML from 'yaml';
+import { Model } from './wavefunction/model';
 
 // red:   x
 // green: y
@@ -17,8 +17,8 @@ class Game {
   group: THREE.Group;
   loader: GLTFLoader;
   prots: Prototype[];
-  timePassed: number = 6;
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
+  timePassed: number = 0;
   index: number = 0;
 
   public async Init(): Promise<void> {
@@ -30,7 +30,7 @@ class Game {
     const ratio: number = window.innerHeight / window.innerWidth;
     const width: number = 40;
     const height: number = width * ratio;
-    const gridSize: number = 3;
+    // const gridSize: number = 3;
 
     this.camera = new THREE.OrthographicCamera(
       width / - 2,
@@ -58,65 +58,33 @@ class Game {
     this.renderer.render(this.scene, this.camera);
     document.body.appendChild(this.renderer.domElement);
 
-    const yaml = await fetch('./prototypes.yaml');
-    this.prots = Prototype.parseFromObject(YAML.parse(await yaml.text()));
+    // const yaml = await fetch('./prototypes.yaml');
+    // this.prots = Prototype.parseFromObject(YAML.parse(await yaml.text()));
 
-    const offset: number = (gridSize % 2 == 0) ? 0 : 0.5;
-    const spacing: number = 2;
+    // const offset: number = (gridSize % 2 == 0) ? 0 : 0.5;
+    // const spacing: number = 2;
 
-    for (let x = 0; x < gridSize; x++) {
-      const dx = x - gridSize / 2 + offset;
-      for (let y = 0; y < gridSize; y++) {
-        const dy = y - gridSize / 2 + offset;
-        for (let z = 0; z < gridSize; z++) {
-          const dz = z - gridSize / 2 + offset;
-          const mesh = await this.loadMesh(`models/${this.prots[0].mesh}`, this.prots[0].rotation);
-          mesh.position.add(new Vector3(dx * spacing, dy * spacing, dz * spacing));
-          this.group.add(mesh);
-        }
-      }
-    }
-
-    // let mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
-    // let neighborMeshes = new THREE.Group();
-
-    // setInterval(async () => {
-    //   let prot: Prototype = this.prots[this.index];
-    //   if (mesh) {
-    //     this.group.remove(mesh);
-    //     this.group.remove(neighborMeshes);
+    // for (let x = 0; x < gridSize; x++) {
+    //   const dx = x - gridSize / 2 + offset;
+    //   for (let y = 0; y < gridSize; y++) {
+    //     const dy = y - gridSize / 2 + offset;
+    //     for (let z = 0; z < gridSize; z++) {
+    //       const dz = z - gridSize / 2 + offset;
+    //       const mesh = await this.loadMesh(`models/${this.prots[0].mesh}`, this.prots[0].rotation);
+    //       mesh.position.add(new Vector3(dx * spacing, dy * spacing, dz * spacing));
+    //       this.group.add(mesh);
+    //     }
     //   }
+    // }
 
-    //   mesh = await this.loadMesh(`models/${prot.mesh}`, prot.rotation);
-    //   this.group.add(mesh);
-    //   neighborMeshes = new THREE.Group();
-
-    //   for (let [index, neighbors] of prot.neighbors) {
-    //     if (neighbors.length == 0) continue;
-    //     const side: Vector3 = Prototype.indexToVec3(index);
-    //     const neighborMesh = await this.loadMesh(`models/${neighbors[3].mesh}`, neighbors[3].rotation);
-    //     neighborMesh.position.add(side.multiplyScalar(3));
-    //     neighborMeshes.add(neighborMesh);
-    //   }
-    //   this.group.add(neighborMeshes);
-
-    //   this.index = (this.index + 1) % this.prots.length;
-    // }, 2000);
+    const model = new Model(new Vector3(10, 10, 10));
+    model.run();
 
     this.renderer.setAnimationLoop(async () => await this.process());
-
     this.scene.add(this.group);
   }
 
   private setupLight(): void {
-    // const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    // this.scene.add(ambientLight);
-
-    // const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    // directionalLight.castShadow = true;
-    // directionalLight.position.set(20, 40, 10);
-    // this.scene.add(directionalLight);
-
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
     hemiLight.position.set(0, 300, 0);
     this.scene.add(hemiLight);
@@ -133,6 +101,7 @@ class Game {
     this.group.rotation.y += delta * 0.05;
   }
 
+  // @ts-ignore
   private async loadMesh(mesh: string, rotation: Vector3): Promise<THREE.Mesh> {
     return new Promise<THREE.Mesh>((resolve, reject) => {
       this.loader.load(mesh, (gltf: GLTF): void => {
