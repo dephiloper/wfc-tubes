@@ -1,4 +1,5 @@
 import { Vector3 } from "three";
+import YAML from 'yaml';
 
 export class Prototype {
   id: number;
@@ -13,7 +14,7 @@ export class Prototype {
     this.openings = openings ?? new Array<Vector3>();
     this.neighbors = new Map<number, number[]>();
 
-    // create six neighbor objects for six sides of the voxel element
+    // create six neighbor objects for six sides of the voxel tiles
     this.neighbors.set(0, new Array<number>());
     this.neighbors.set(1, new Array<number>());
     this.neighbors.set(2, new Array<number>());
@@ -38,30 +39,37 @@ export class Prototype {
     }
 
     // find matching/neighboring prototypes
-    for (const protoA of prototypes) {
-      for (const protoB of prototypes) {
-        for (const openingA of protoA.openings) {
-          for (const openingB of protoB.openings) {
+    for (let i = 0; i < prototypes.length; i++) {
+      for (let j = 0; j < prototypes.length; j++) {
+        for (let a = 0; a < prototypes[i].openings.length; a++) {
+          for (let b = 0; b < prototypes[j].openings.length; b++) {
             // if the opening of one prototype matches the opening of another prototype
             // to check if they match the opening of protoB has to be inverted
-            let invertedB: Vector3 = openingB.clone();
+            let invertedB: Vector3 = prototypes[j].openings[b].clone();
             invertedB.multiplyScalar(-1);
-            if (openingA.equals(invertedB)) {
+            if (prototypes[i].openings[a].equals(invertedB)) {
               // add protoB to the neighbors of protoA at the side openingA
-              protoA.neighbors.get(Prototype.Vec3ToIndex(openingA))?.push(protoB.id);
+              prototypes[i].neighbors.get(Prototype.Vec3ToIndex(prototypes[i].openings[a]))?.push(prototypes[j].id);
             }
           }
         }
+      }
 
-        for (let i = 0; i < 6; i++) {
-          // add empty field if there are no neighbors for a prototype
-          if (protoA.neighbors.get(i)?.length === 0) {
-            protoA.neighbors.get(i)?.push(0);
-          }
+      for (let n = 0; n < 6; n++) {
+        // add empty field if there are no neighbors for a prototype
+        if (prototypes[i].neighbors.get(n)?.length === 0) {
+          prototypes[i].neighbors.get(n)?.push(0);
+          let inverted: Vector3 = this.IndexToVec3(n);
+          inverted.multiplyScalar(-1);
+
+          prototypes[0].neighbors.get(Prototype.Vec3ToIndex(inverted))?.push(prototypes[i].id);
         }
       }
     }
 
+    console.log("new prots");
+    console.log(YAML.stringify(prototypes));
+    debugger;
     return prototypes;
   }
 

@@ -77,7 +77,7 @@ class Game {
     //   }
     // }
 
-    const model = new Model(new Vector3(10, 10, 10));
+    const model = new Model(new Vector3(2, 2, 2));
     model.run();
 
     this.renderer.setAnimationLoop(async () => await this.process());

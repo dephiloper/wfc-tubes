@@ -15,39 +15,54 @@ export class Model {
   // @ts-ignore
   public async run(): void {
     await this.wf.initGrid();
+    console.log("prototypes", this.wf.prototypes);
 
-    //while (this.wf.isFullyCollapsed()) {
-    this.iterate();
-    //}
-
+    while (!this.wf.isFullyCollapsed()) {
+      this.iterate();
+    }
     // TODO return wave function
   }
 
-  // @ts-ignore
   private iterate() {
     const index = this.minEntropyId();
     this.wf.collapse(index);
     this.propagate(index);
   }
 
-  // @ts-ignore
   private propagate(index: number) {
+    console.log("propagate", [...this.wf.grid]);
     const stack: number[] = [index];
 
     while (stack.length > 0) {
       const cIdx = stack.pop()!;
-      // contains all possible elements 
+      // contains all available tiles 
       // on this position within the grid
-      const currentVoxel: number[] = this.wf.grid[cIdx];
+      const currentTiles: number[] = this.wf.grid[cIdx];
 
       const neighbors: number[] = this.findNeighbors(cIdx);
       for (let nIdx of neighbors) {
-        const neighborVoxel = this.wf.grid[nIdx];
-        const some = currentVoxel.some((cElement: number) => { neighborVoxel.map((nElement: number) => { return this.checkCompatibility(cIdx, cElement, nIdx, nElement); }) });
-        console.log(some);
-      }
-    }
+        const neighborTiles = this.wf.grid[nIdx];
 
+        for (let neighborTile of neighborTiles) {
+          const tileAllowed = currentTiles.some((currentTile: number) => { return this.checkCompatibility(cIdx, currentTile, nIdx, neighborTile) });
+
+          if (!tileAllowed) {
+            console.log("current", cIdx);
+            console.log("constrain", nIdx, neighborTile);
+            console.log("grid", this.wf.grid);
+            debugger;
+
+            if (neighborTiles.length === 1) {
+              debugger;
+            }
+            this.wf.constrain(nIdx, neighborTile);
+            stack.push(nIdx);
+            debugger;
+          }
+        }
+      }
+
+    }
   }
 
   private findNeighbors(idx: number): number[] {
@@ -72,12 +87,12 @@ export class Model {
     return neighbors;
   }
 
-  private checkCompatibility(idA: number, elemenA: number, idB: number, elementB: number): boolean {
+  private checkCompatibility(idA: number, tileA: number, idB: number, tileB: number): boolean {
     const posA: Vector3 = ToPosition(this.size, idA);
     const posB: Vector3 = ToPosition(this.size, idB);
     const dir: Vector3 = posB.clone().sub(posA).normalize();
-    const pA: Prototype = this.wf.prototypes[elemenA];
-    const pB: Prototype = this.wf.prototypes[elementB];
+    const pA: Prototype = this.wf.prototypes[tileA];
+    const pB: Prototype = this.wf.prototypes[tileB];
 
     const compatibilty: boolean = Prototype.CheckCompatibility(pA, pB, dir);
     return compatibilty;
@@ -94,8 +109,8 @@ export class Model {
     for (let i = 0; i < this.size.x * this.size.y * this.size.z; i++) {
       if (this.wf.grid[i].length === 1) continue; // skip over already collapsed grid positions
 
-      const noisedEntropy: number = this.wf.shannonEntropy(i) - (Math.random() / 1000);
-
+      const simpleEntropy = this.wf.simpleEntropy(i);
+      const noisedEntropy: number = simpleEntropy - (Math.random() / 1000);
       if (noisedEntropy < minEntropy) {
         minEntropy = noisedEntropy;
         minEntropyId = i;
