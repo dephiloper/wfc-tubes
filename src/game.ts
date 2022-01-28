@@ -2,8 +2,10 @@ import { Input, IInput } from './input';
 import * as THREE from 'three';
 import { Clock, OrthographicCamera, Vector3 } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Prototype } from './prototype';
 import { Model } from './wavefunction/model';
+import { ToPosition } from './wavefunction/helper';
+
+const SIZE: number = 6;
 
 // red:   x
 // green: y
@@ -16,7 +18,6 @@ class Game {
   input: IInput;
   group: THREE.Group;
   loader: GLTFLoader;
-  prots: Prototype[];
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>;
   timePassed: number = 0;
   index: number = 0;
@@ -43,7 +44,7 @@ class Game {
 
     this.camera.position.set(10, 10, 10);
     this.camera.lookAt(0, 0, 0);
-    this.camera.zoom = 2;
+    this.camera.zoom = 0.8;
     this.camera.updateProjectionMatrix();
 
     this.scene.add(this.camera);
@@ -58,27 +59,22 @@ class Game {
     this.renderer.render(this.scene, this.camera);
     document.body.appendChild(this.renderer.domElement);
 
-    // const yaml = await fetch('./prototypes.yaml');
-    // this.prots = Prototype.parseFromObject(YAML.parse(await yaml.text()));
+    const model = new Model(new Vector3(SIZE, SIZE, SIZE));
+    const grid = await model.run();
+    const offset: number = (model.size.x % 2 == 0) ? 0 : 0.5;
+    const spacing: number = 2;
 
-    // const offset: number = (gridSize % 2 == 0) ? 0 : 0.5;
-    // const spacing: number = 2;
+    for (let i = 0; i < grid.length; i++) {
+      const prototype = model.wf.prototypes[grid[i]];
+      if (prototype.mesh === "") continue;
+      const mesh = await this.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
+      const p = ToPosition(model.size, i);
+      p.sub(new Vector3(model.size.x / 2 + offset, model.size.y / 2 + offset, model.size.z / 2 + offset));
 
-    // for (let x = 0; x < gridSize; x++) {
-    //   const dx = x - gridSize / 2 + offset;
-    //   for (let y = 0; y < gridSize; y++) {
-    //     const dy = y - gridSize / 2 + offset;
-    //     for (let z = 0; z < gridSize; z++) {
-    //       const dz = z - gridSize / 2 + offset;
-    //       const mesh = await this.loadMesh(`models/${this.prots[0].mesh}`, this.prots[0].rotation);
-    //       mesh.position.add(new Vector3(dx * spacing, dy * spacing, dz * spacing));
-    //       this.group.add(mesh);
-    //     }
-    //   }
-    // }
+      mesh.position.add(new Vector3(p.x * spacing, p.y * spacing, p.z * spacing));
+      this.group.add(mesh);
+    }
 
-    const model = new Model(new Vector3(2, 2, 2));
-    model.run();
 
     this.renderer.setAnimationLoop(async () => await this.process());
     this.scene.add(this.group);

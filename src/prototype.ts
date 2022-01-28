@@ -1,31 +1,31 @@
+import assert from "assert";
 import { Vector3 } from "three";
-import YAML from 'yaml';
 
 export class Prototype {
   id: number;
   mesh: string;
   rotation: Vector3;
-  openings: Vector3[];
-  neighbors: Map<number, number[]>;
+  openings: number[];
+  neighboringSides: number[][];
 
-  constructor(mesh?: string, rotation?: Vector3, openings?: Vector3[]) {
+  constructor(mesh?: string, rotation?: Vector3, openings?: number[]) {
     this.mesh = mesh ?? "";
     this.rotation = rotation ?? new Vector3();
-    this.openings = openings ?? new Array<Vector3>();
-    this.neighbors = new Map<number, number[]>();
+    this.openings = openings ?? new Array<number>();
+    this.neighboringSides = new Array<number[]>();
 
-    // create six neighbor objects for six sides of the voxel tiles
-    this.neighbors.set(0, new Array<number>());
-    this.neighbors.set(1, new Array<number>());
-    this.neighbors.set(2, new Array<number>());
-    this.neighbors.set(3, new Array<number>());
-    this.neighbors.set(4, new Array<number>());
-    this.neighbors.set(5, new Array<number>());
+    // create six neighboring sides objects for six sides of the voxel tiles
+    for (let i = 0; i < 6; i++) this.neighboringSides.push(new Array<number>());
+  }
+
+  public isNeighbor(prototype: Prototype, direction: number) {
+    return this.neighboringSides[direction].includes(prototype.id);
   }
 
   // initial object has to be parsed from object to prototype
   public static ParseFromObject(objs: any[]): Prototype[] {
     const prototypes = new Array<Prototype>();
+    // objs = objs.slice(0, 10); // TODO remove slice
 
     for (let i = 0; i < objs.length; i++) {
       const prototype = new Prototype();
@@ -33,58 +33,74 @@ export class Prototype {
       prototype.mesh = objs[i].mesh;
       prototype.rotation = new Vector3(objs[i].rotation.x, objs[i].rotation.y, objs[i].rotation.z);
       for (const opening of objs[i].openings) {
-        prototype.openings.push(new Vector3(opening.x, opening.y, opening.z));
+        let index: number = this.Vec3ToIndex(new Vector3(opening.x, opening.y, opening.z));
+        prototype.openings.push(index);
       }
       prototypes.push(prototype);
     }
 
-    // find matching/neighboring prototypes
-    for (let i = 0; i < prototypes.length; i++) {
-      for (let j = 0; j < prototypes.length; j++) {
-        for (let a = 0; a < prototypes[i].openings.length; a++) {
-          for (let b = 0; b < prototypes[j].openings.length; b++) {
-            // if the opening of one prototype matches the opening of another prototype
-            // to check if they match the opening of protoB has to be inverted
-            let invertedB: Vector3 = prototypes[j].openings[b].clone();
-            invertedB.multiplyScalar(-1);
-            if (prototypes[i].openings[a].equals(invertedB)) {
-              // add protoB to the neighbors of protoA at the side openingA
-              prototypes[i].neighbors.get(Prototype.Vec3ToIndex(prototypes[i].openings[a]))?.push(prototypes[j].id);
-            }
+    for (const p0 of prototypes) {
+      for (const p1 of prototypes) {
+        for (const o0 of p0.openings) {
+          for (const o1 of p1.openings) {
+            // if the opening of one prototype matches the opening of another prototype -
+            // for this task we invert the opening direction of one prototype and compare
+            // it with the other opening direction
+            if (Prototype.InvertDirection(o0) === o1) Prototype.AddUniqueNeighbor(p0, p1, o0);
           }
         }
       }
 
-      for (let n = 0; n < 6; n++) {
-        // add empty field if there are no neighbors for a prototype
-        if (prototypes[i].neighbors.get(n)?.length === 0) {
-          prototypes[i].neighbors.get(n)?.push(0);
-          let inverted: Vector3 = this.IndexToVec3(n);
-          inverted.multiplyScalar(-1);
-
-          prototypes[0].neighbors.get(Prototype.Vec3ToIndex(inverted))?.push(prototypes[i].id);
+      p0.neighboringSides.forEach((side: number[], dir: number) => {
+        if (side.length === 0) {
+          Prototype.AddUniqueNeighbor(p0, prototypes[0], dir);
+          Prototype.AddUniqueNeighbor(prototypes[0], p0, Prototype.InvertDirection(dir));
         }
-      }
+      });
     }
 
-    console.log("new prots");
-    console.log(YAML.stringify(prototypes));
-    debugger;
+    // check with assertion if created neighbors have a fitting counterpart
+    for (const p0 of prototypes) {
+      p0.neighboringSides.forEach((side: number[], direction) => {
+        for (const neighbor of side) {
+          assert(prototypes[neighbor].neighboringSides[Prototype.InvertDirection(direction)].includes(p0.id),
+            `Mismatch in prototype generation. ${p0} and ${prototypes[neighbor]} in direction ${direction}.`);
+        }
+      });
+    }
+
     return prototypes;
+  }
+
+  private static AddUniqueNeighbor(p0: Prototype, p1: Prototype, dir: number) {
+    // check whether p0 does not already has p1 as a neighbor
+    assert(!p0.neighboringSides[dir].includes(p1.id), `Prototype ${p1.id} does already exist as neighbor for ${p0.id}`);
+
+    // add reference of p1 to p0
+    p0.neighboringSides[dir].push(p1.id);
+
+  }
+
+  // index = 1
+  // 1 % 2 = 1
+  // 1 * -2 = -2
+  // 2 + 1 = -1
+  public static InvertDirection(index: number): number {
+    return index + (index % 2) * -2 + 1;
   }
 
   public static IndexToVec3(index: number): Vector3 {
     switch (index) {
       case 0:
-        return new Vector3(1, 0, 0);
-      case 1:
-        return new Vector3(0, 1, 0);
-      case 2:
-        return new Vector3(0, 0, 1);
-      case 3:
         return new Vector3(-1, 0, 0);
-      case 4:
+      case 1:
+        return new Vector3(1, 0, 0);
+      case 2:
+        return new Vector3(0, 1, 0);
+      case 3:
         return new Vector3(0, -1, 0);
+      case 4:
+        return new Vector3(0, 0, 1);
       case 5:
         return new Vector3(0, 0, -1);
       default:
@@ -92,29 +108,23 @@ export class Prototype {
     }
   }
 
-  // 0 -   1,  0,  0
-  // 1 -   0,  1,  0
-  // 2 -   0,  0,  1
-  // 3 -  -1,  0,  0
-  // 4 -   0, -1,  0
-  // 5 -   0,  0, -1
+  // 0 -   -1,   0,   0
+  // 1 -    1,   0,   0
+  // 2 -    0,  -1,   0
+  // 3 -    0,   1,   0
+  // 4 -    0,   0,  -1
+  // 5 -    0,   0,   1
   public static Vec3ToIndex(vec3: Vector3): number {
     if (vec3.length() != 1) throw new Error("Vector should have length of 1.");
 
-    if (vec3.x > 0) return 0;
-    if (vec3.y > 0) return 1;
-    if (vec3.z > 0) return 2;
-    if (vec3.x < 0) return 3;
-    if (vec3.y < 0) return 4;
-    if (vec3.z < 0) return 5;
+    if (vec3.x < 0) return 0;
+    if (vec3.x > 0) return 1;
+    if (vec3.y < 0) return 2;
+    if (vec3.y > 0) return 3;
+    if (vec3.z < 0) return 4;
+    if (vec3.z > 0) return 5;
 
     throw new Error("No matching index found.")
-  }
-
-  public static CheckCompatibility(a: Prototype, b: Prototype, dir: Vector3): boolean {
-    const index = this.Vec3ToIndex(dir);
-
-    return a.neighbors.get(index)!.includes(b.id);
   }
 }
 

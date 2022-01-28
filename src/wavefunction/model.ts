@@ -1,25 +1,32 @@
 import { Prototype } from "./../prototype";
 import { Vector3 } from "three";
-import { ToIndex, ToPosition } from "./helper";
+import { prng, ToIndex, ToPosition } from "./helper";
 import { WaveFunction } from "./wavefunction";
+import seedrandom from "seedrandom";
 
 export class Model {
-  private wf: WaveFunction;
-  private size: Vector3;
+  public wf: WaveFunction;
+  public size: Vector3;
+  private rng: prng;
 
   constructor(size: Vector3) {
+    // const seed = "0.48397949242158544";
+    const seed = Math.random().toString();
+    console.log("Seed is", seed);
+    this.rng = seedrandom.alea(seed);
     this.size = size;
-    this.wf = new WaveFunction(size);
+    this.wf = new WaveFunction(size, this.rng);
   }
 
-  // @ts-ignore
-  public async run(): void {
+  public async run(): Promise<number[]> {
     await this.wf.initGrid();
-    console.log("prototypes", this.wf.prototypes);
 
     while (!this.wf.isFullyCollapsed()) {
       this.iterate();
     }
+
+    console.log("done");
+    return this.wf.grid.reduce((prev, next) => { return prev.concat(next); });
     // TODO return wave function
   }
 
@@ -30,7 +37,6 @@ export class Model {
   }
 
   private propagate(index: number) {
-    console.log("propagate", [...this.wf.grid]);
     const stack: number[] = [index];
 
     while (stack.length > 0) {
@@ -41,28 +47,32 @@ export class Model {
 
       const neighbors: number[] = this.findNeighbors(cIdx);
       for (let nIdx of neighbors) {
-        const neighborTiles = this.wf.grid[nIdx];
+        // console.log("checking neighbor", nIdx, "of neighbors", neighbors);
+        const neighborTiles = [...this.wf.grid[nIdx]];
 
         for (let neighborTile of neighborTiles) {
-          const tileAllowed = currentTiles.some((currentTile: number) => { return this.checkCompatibility(cIdx, currentTile, nIdx, neighborTile) });
+          // console.log("checking neighbor tile", neighborTile, "with current tiles", currentTiles);
+          const tileAllowed = this.checkTileCompatibility(cIdx, currentTiles, nIdx, neighborTile);
 
           if (!tileAllowed) {
-            console.log("current", cIdx);
-            console.log("constrain", nIdx, neighborTile);
-            console.log("grid", this.wf.grid);
-            debugger;
-
             if (neighborTiles.length === 1) {
               debugger;
             }
             this.wf.constrain(nIdx, neighborTile);
             stack.push(nIdx);
-            debugger;
+
+            // console.log("current", cIdx);
+            // console.log("constrain", neighborTile, "on", nIdx);
+            // console.log("grid", this.wf.grid.toString());
           }
         }
+        // console.log("done checking neighbor", nIdx);
       }
 
     }
+  }
+  private checkTileCompatibility(cIdx: number, currentTiles: number[], nIdx: number, neighborTile: number): boolean {
+    return currentTiles.some((currentTile: number) => { return this.checkCompatibility(cIdx, currentTile, nIdx, neighborTile) });
   }
 
   private findNeighbors(idx: number): number[] {
@@ -87,15 +97,15 @@ export class Model {
     return neighbors;
   }
 
-  private checkCompatibility(idA: number, tileA: number, idB: number, tileB: number): boolean {
-    const posA: Vector3 = ToPosition(this.size, idA);
-    const posB: Vector3 = ToPosition(this.size, idB);
-    const dir: Vector3 = posB.clone().sub(posA).normalize();
-    const pA: Prototype = this.wf.prototypes[tileA];
-    const pB: Prototype = this.wf.prototypes[tileB];
+  private checkCompatibility(id0: number, tile0: number, id1: number, tile1: number): boolean {
+    const pos0: Vector3 = ToPosition(this.size, id0);
+    const pos1: Vector3 = ToPosition(this.size, id1);
+    const dirVec: Vector3 = pos1.clone().sub(pos0).normalize();
+    const dir: number = Prototype.Vec3ToIndex(dirVec);
+    const proto0: Prototype = this.wf.prototypes[tile0];
+    const proto1: Prototype = this.wf.prototypes[tile1];
 
-    const compatibilty: boolean = Prototype.CheckCompatibility(pA, pB, dir);
-    return compatibilty;
+    return proto0.isNeighbor(proto1, dir);
   }
 
   /**
@@ -110,7 +120,7 @@ export class Model {
       if (this.wf.grid[i].length === 1) continue; // skip over already collapsed grid positions
 
       const simpleEntropy = this.wf.simpleEntropy(i);
-      const noisedEntropy: number = simpleEntropy - (Math.random() / 1000);
+      const noisedEntropy: number = simpleEntropy - (this.rng() / 1000);
       if (noisedEntropy < minEntropy) {
         minEntropy = noisedEntropy;
         minEntropyId = i;

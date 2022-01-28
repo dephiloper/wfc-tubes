@@ -1,15 +1,18 @@
 import { Prototype } from "./../prototype";
 import { Vector3 } from "three";
 import YAML from 'yaml';
+import { prng } from "./helper";
 
 export class WaveFunction {
   public grid: number[][];
+  public prototypes: Prototype[];
   private size: Vector3;
   private tiles: number[];
   private weights: number[];
-  prototypes: Prototype[];
+  private rng: prng;
 
-  constructor(size: Vector3, weights?: number[]) {
+  constructor(size: Vector3, rng: prng, weights?: number[]) {
+    this.rng = rng;
     this.size = size;
     this.weights = weights ?? new Array<number>();
   }
@@ -19,6 +22,7 @@ export class WaveFunction {
 
     // load the prototypes
     this.prototypes = Prototype.ParseFromObject(YAML.parse(await yaml.text()));
+    console.log("prototypes", this.prototypes);
 
     // represent the prototypes as individual ids
     // filled with values ranging from 0 to the number of prototypes - 1
@@ -34,7 +38,7 @@ export class WaveFunction {
   }
 
   public isFullyCollapsed(): boolean {
-    console.log("fully collapsed?", this.grid.filter(tiles => tiles.length === 1).length);
+    // console.log("fully collapsed?", this.grid.filter(tiles => tiles.length === 1).length);
 
     return this.grid.every((tiles) => tiles.length === 1);
   }
@@ -74,7 +78,7 @@ export class WaveFunction {
 
     // pick random tile based on weight propability
     let pick: number = -1;
-    let rnd: number = Math.random() * weightSum;
+    let rnd: number = this.rng() * weightSum;
 
     for (let [tile, weight] of validWeights) {
       rnd -= weight;
@@ -86,6 +90,7 @@ export class WaveFunction {
 
     if (pick === -1) throw new Error("The picked tile should not be -1.");
     this.grid[index] = [pick];
+    // console.log("picked", pick, "on", index);
   }
 
   public constrain(index: number, tile: number): void {

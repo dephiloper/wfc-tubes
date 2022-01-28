@@ -1,3 +1,4 @@
+import seedrandom from "seedrandom";
 import { Vector3 } from "three";
 
 /**
@@ -20,4 +21,12 @@ export function ToPosition(s: Vector3, i: number): Vector3 {
   p.x = i % s.x;
 
   return p;
+}
+
+export interface prng {
+  (): number;
+  double(): number;
+  int32(): number;
+  quick(): number;
+  state(): seedrandom.State;
 }
