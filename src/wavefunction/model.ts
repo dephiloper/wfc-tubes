@@ -1,33 +1,37 @@
 import { Prototype } from "./../prototype";
 import { Vector3 } from "three";
-import { prng, ToIndex, ToPosition } from "./helper";
+import { ToIndex, ToPosition, Vec3ToIndex } from "../utils/common";
 import { WaveFunction } from "./wavefunction";
 import seedrandom from "seedrandom";
+import prng from " @types/prng";
+import assert from "assert";
+import log from "loglevel";
+import Loader from "../utils/loader";
 
 export class Model {
-  public wf: WaveFunction;
   public size: Vector3;
+  public prototypes: Prototype[];
+  private wf: WaveFunction;
   private rng: prng;
 
   constructor(size: Vector3) {
-    // const seed = "0.48397949242158544";
     const seed = Math.random().toString();
-    console.log("Seed is", seed);
+    log.info(`Seed generated: ${seed}`);
     this.rng = seedrandom.alea(seed);
     this.size = size;
-    this.wf = new WaveFunction(size, this.rng);
   }
-
+  
   public async run(): Promise<number[]> {
-    await this.wf.initGrid();
+    this.prototypes = await Loader.Instance.loadPrototypes();
+    this.wf = new WaveFunction(this.prototypes, this.rng);
+    await this.wf.initGrid(this.size);
 
     while (!this.wf.isFullyCollapsed()) {
       this.iterate();
     }
 
-    console.log("done");
+    log.info(`Generation process completed.`)
     return this.wf.grid.reduce((prev, next) => { return prev.concat(next); });
-    // TODO return wave function
   }
 
   private iterate() {
@@ -41,34 +45,26 @@ export class Model {
 
     while (stack.length > 0) {
       const cIdx = stack.pop()!;
+
       // contains all available tiles 
       // on this position within the grid
       const currentTiles: number[] = this.wf.grid[cIdx];
 
       const neighbors: number[] = this.findNeighbors(cIdx);
       for (let nIdx of neighbors) {
-        // console.log("checking neighbor", nIdx, "of neighbors", neighbors);
         const neighborTiles = [...this.wf.grid[nIdx]];
 
         for (let neighborTile of neighborTiles) {
-          // console.log("checking neighbor tile", neighborTile, "with current tiles", currentTiles);
           const tileAllowed = this.checkTileCompatibility(cIdx, currentTiles, nIdx, neighborTile);
 
           if (!tileAllowed) {
-            if (neighborTiles.length === 1) {
-              debugger;
-            }
+            assert(neighborTiles.length > 1, `The tile ${neighborTile} at position ${nIdx} is about to be constrained.`)
             this.wf.constrain(nIdx, neighborTile);
             stack.push(nIdx);
 
-            // console.log("current", cIdx);
-            // console.log("constrain", neighborTile, "on", nIdx);
-            // console.log("grid", this.wf.grid.toString());
           }
         }
-        // console.log("done checking neighbor", nIdx);
       }
-
     }
   }
   private checkTileCompatibility(cIdx: number, currentTiles: number[], nIdx: number, neighborTile: number): boolean {
@@ -101,9 +97,9 @@ export class Model {
     const pos0: Vector3 = ToPosition(this.size, id0);
     const pos1: Vector3 = ToPosition(this.size, id1);
     const dirVec: Vector3 = pos1.clone().sub(pos0).normalize();
-    const dir: number = Prototype.Vec3ToIndex(dirVec);
-    const proto0: Prototype = this.wf.prototypes[tile0];
-    const proto1: Prototype = this.wf.prototypes[tile1];
+    const dir: number = Vec3ToIndex(dirVec);
+    const proto0: Prototype = this.prototypes[tile0];
+    const proto1: Prototype = this.prototypes[tile1];
 
     return proto0.isNeighbor(proto1, dir);
   }
@@ -127,7 +123,7 @@ export class Model {
       }
     }
 
-    if (minEntropyId === -1) throw new Error("No min entropy id found!");
+    assert(minEntropyId !== -1, "No min entropy id found!");
     return minEntropyId;
   }
 }

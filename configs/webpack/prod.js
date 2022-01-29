@@ -6,7 +6,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = merge(commonConfig, {
   mode: 'production',
-  entry: './src/game.ts',
+  entry: './src/main.ts',
   output: {
     filename: 'js/bundle.[hash].min.js',
     path: resolve(__dirname, '../../dist'),

@@ -1,29 +1,22 @@
 import { Prototype } from "./../prototype";
 import { Vector3 } from "three";
-import YAML from 'yaml';
-import { prng } from "./helper";
+import prng from " @types/prng";
+import assert from "assert";
 
 export class WaveFunction {
   public grid: number[][];
-  public prototypes: Prototype[];
-  private size: Vector3;
+  private prototypes: Prototype[];
   private tiles: number[];
   private weights: number[];
   private rng: prng;
 
-  constructor(size: Vector3, rng: prng, weights?: number[]) {
+  constructor(prototypes: Prototype[], rng: prng, weights?: number[]) {
+    this.prototypes = prototypes;
     this.rng = rng;
-    this.size = size;
     this.weights = weights ?? new Array<number>();
   }
 
-  public async initGrid(): Promise<void> {
-    const yaml = await fetch('./prototypes.yaml');
-
-    // load the prototypes
-    this.prototypes = Prototype.ParseFromObject(YAML.parse(await yaml.text()));
-    console.log("prototypes", this.prototypes);
-
+  public async initGrid(size: Vector3): Promise<void> {
     // represent the prototypes as individual ids
     // filled with values ranging from 0 to the number of prototypes - 1
     this.tiles = [...Array(this.prototypes.length).keys()];
@@ -33,13 +26,10 @@ export class WaveFunction {
     if (this.weights.length === 0) this.weights = new Array(this.tiles.length).fill(2);
 
     // prepare the voxel grid by entering all super positions 
-    for (let i = 0; i < this.size.x * this.size.y * this.size.z; i++)
-      this.grid[i] = [...this.tiles];
+    for (let i = 0; i < size.x * size.y * size.z; i++) this.grid[i] = [...this.tiles];
   }
 
   public isFullyCollapsed(): boolean {
-    // console.log("fully collapsed?", this.grid.filter(tiles => tiles.length === 1).length);
-
     return this.grid.every((tiles) => tiles.length === 1);
   }
 
@@ -88,17 +78,13 @@ export class WaveFunction {
       }
     }
 
-    if (pick === -1) throw new Error("The picked tile should not be -1.");
+    assert(pick !== -1, "The picked tile should not be -1.");
     this.grid[index] = [pick];
-    // console.log("picked", pick, "on", index);
   }
 
   public constrain(index: number, tile: number): void {
     const i = this.grid[index].indexOf(tile);
-    if (i == -1) {
-      throw new Error("The tile that has to be constrained was not found.")
-    }
-
+    assert(i !== -1, "The tile that has to be constrained was not found.");
     this.grid[index].splice(i, 1);
 
     if (this.grid[index].length === 0) {
