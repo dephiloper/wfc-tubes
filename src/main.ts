@@ -7,13 +7,13 @@ import Loader from './utils/loader';
 import { throttle } from 'throttle-debounce';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-const SIZE: number = 6;
 
 // red:   x
 // green: y
 // blue:  z
 class Main {
-  private readonly SIZE: number = 40;
+  private readonly GRID_SIZE: number = 6;
+  private readonly CAMERA_SIZE: number = 40;
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
   private clock: Clock = new Clock();
@@ -35,10 +35,10 @@ class Main {
     const aspect: number = window.innerWidth / window.innerHeight;
 
     this.camera = new THREE.OrthographicCamera(
-      (this.SIZE * aspect) / -2,
-      (this.SIZE * aspect) / 2,
-      this.SIZE / 2,
-      this.SIZE / -2,
+      (this.CAMERA_SIZE * aspect) / -2,
+      (this.CAMERA_SIZE * aspect) / 2,
+      this.CAMERA_SIZE / 2,
+      this.CAMERA_SIZE / -2,
       -1000,
       1000
     );
@@ -58,7 +58,7 @@ class Main {
 
     this.setupLight();
 
-    const model = new Model(new Vector3(SIZE, SIZE, SIZE));
+    const model = new Model(new Vector3(this.GRID_SIZE, this.GRID_SIZE, this.GRID_SIZE));
     const grid = await model.run();
     await this.renderModel(model, grid);
 
@@ -68,8 +68,8 @@ class Main {
 
   public resize(): void {
     const aspect: number = window.innerWidth / window.innerHeight;
-    this.camera.left = (this.SIZE * aspect) / -2;
-    this.camera.right = (this.SIZE * aspect) / 2;
+    this.camera.left = (this.CAMERA_SIZE * aspect) / -2;
+    this.camera.right = (this.CAMERA_SIZE * aspect) / 2;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }

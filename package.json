@@ -7,8 +7,8 @@
   "private": false,
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts}' --quiet --fix . && tsc --noEmit",
-    "build": "webpack -p --config=configs/webpack/prod.js",
-    "start": "webpack-dev-server --config=configs/webpack/dev.js",
+    "build": "NODE_ENV=production webpack --mode=production --config=configs/webpack/prod.js",
+    "start": "NODE_ENV=development webpack-dev-server --config=configs/webpack/dev.js",
     "test": "npx ts-node test/test.ts"
   },
   "husky": {

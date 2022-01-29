@@ -34,10 +34,8 @@ module.exports = {
       template: './public/index.html',
     }),
     new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: JSON.stringify('development'),
-        APP_NAME: JSON.stringify(process.env.APP_NAME || 'Stack'),
-      },
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV), 
+      'process.env.APP_NAME' : JSON.stringify(process.env.APP_NAME || 'Stack')
     }),
     new ForkTsCheckerWebpackPlugin({ typescript: { configFile: './tsconfig.json' } }),
   ],
