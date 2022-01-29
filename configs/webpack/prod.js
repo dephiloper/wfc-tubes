@@ -1,3 +1,4 @@
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { resolve } = require('path');
 const { merge } = require('webpack-merge');
 
@@ -14,6 +15,24 @@ module.exports = merge(commonConfig, {
   },
   devtool: 'source-map',
   plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'src/prototypes.yaml',
+        },
+        {
+          from: 'src/models/',
+          to: './models/',
+        },
+        {
+          from: 'src/models/',
+          to: './models/',
+        },
+        {
+          from: 'public/style.css'
+        }
+      ]
+    }),
     new CleanWebpackPlugin(),
   ],
 });

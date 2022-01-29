@@ -34,6 +34,7 @@
     "@types/throttle-debounce": "^2.1.0",
     "assert": "^2.0.0",
     "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^10.2.3",
     "fork-ts-checker-webpack-plugin": "^7.0.0",
     "html-webpack-plugin": "^5.5.0",
     "install-peers-cli": "^2.2.0",
