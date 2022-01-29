@@ -1,0 +1,130 @@
+#00 empty:
+- mesh: ""
+  rotation: { x: 0, y: 0, z: 0 }
+  openings: []
+#01 tube_x:
+- mesh: "tube.gltf"
+  rotation: { x: 0, y: 0, z: 90 }
+  openings:
+    - { x: 1, y: 0, z: 0 }
+    - { x: -1, y: 0, z: 0 }
+#02 tube_y:
+- mesh: "tube.gltf"
+  rotation: { x: 0, y: 0, z: 0 }
+  openings:
+    - { x: 0, y: 1, z: 0 }
+    - { x: 0, y: -1, z: 0 }
+#03 tube_z:
+- mesh: "tube.gltf"
+  rotation: { x: 90, y: 0, z: 0 }
+  openings:
+    - { x: 0, y: 0, z: 1 }
+    - { x: 0, y: 0, z: -1 }
+
+#04 tube_closed_left_x:
+- mesh: "tube_closed.gltf"
+  rotation: { x: 0, y: 0, z: -90 }
+  openings:
+    - { x: 1, y: 0, z: 0 }
+#05 tube_closed_right_x:
+- mesh: "tube_closed.gltf"
+  rotation: { x: 0, y: 0, z: 90 }
+  openings:
+    - { x: -1, y: 0, z: 0 }
+
+#06 tube_closed_bottom_y:
+- mesh: "tube_closed.gltf"
+  rotation: { x: 0, y: 0, z: 0 }
+  openings:
+    - { x: 0, y: 1, z: 0 }
+#07 tube_closed_top_y:
+- mesh: "tube_closed.gltf"
+  rotation: { x: 180, y: 0, z: 0 }
+  openings:
+    - { x: 0, y: -1, z: 0 }
+
+#08 tube_closed_back_z:
+- mesh: "tube_closed.gltf"
+  rotation: { x: 90, y: 0, z: 0 }
+  openings:
+    - { x: 0, y: 0, z: 1 }
+#09 tube_closed_front_z:
+- mesh: "tube_closed.gltf"
+  rotation: { x: -90, y: 0, z: 0 }
+  openings:
+    - { x: 0, y: 0, z: -1 }
+
+#10 corner_tube (+x, +y):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 0, y: 0, z: 0 }
+  openings:
+    - { x: 1, y: 0, z: 0 }
+    - { x: 0, y: 1, z: 0 }
+#11 corner_tube (-x, +y):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 0, y: 180, z: 0 }
+  openings:
+    - { x: -1, y: 0, z: 0 }
+    - { x: 0, y: 1, z: 0 }
+#12 corner_tube (+x, -y):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 180, y: 0, z: 0 }
+  openings:
+    - { x: 1, y: 0, z: 0 }
+    - { x: 0, y: -1, z: 0 }
+#13 corner_tube (-x, -y):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 0, y: 0, z: 180 }
+  openings:
+    - { x: -1, y: 0, z: 0 }
+    - { x: 0, y: -1, z: 0 }
+
+#14 corner_tube (+x, +z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 90, y: 0, z: 0 }
+  openings:
+    - { x: 1, y: 0, z: 0 }
+    - { x: 0, y: 0, z: 1 }
+#15 corner_tube (-x, +z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 90, y: 0, z: 90 }
+  openings:
+    - { x: -1, y: 0, z: 0 }
+    - { x: 0, y: 0, z: 1 }
+#16 corner_tube (+x, -z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: -90, y: 0, z: 0 }
+  openings:
+    - { x: 1, y: 0, z: 0 }
+    - { x: 0, y: 0, z: -1 }
+#17 corner_tube (-x, -z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 90, y: 0, z: 180 }
+  openings:
+    - { x: -1, y: 0, z: 0 }
+    - { x: 0, y: 0, z: -1 }
+
+#18 corner_tube (+y, +z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 0, y: -90, z: 0 }
+  openings:
+    - { x: 0, y: 1, z: 0 }
+    - { x: 0, y: 0, z: 1 }
+#19 corner_tube (-y, +z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 90, y: -90, z: 0 }
+  openings:
+    - { x: 0, y: -1, z: 0 }
+    - { x: 0, y: 0, z: 1 }
+#20 corner_tube (+y, -z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: 0, y: 90, z: 0 }
+  openings:
+    - { x: 0, y: 1, z: 0 }
+    - { x: 0, y: 0, z: -1 }
+#21 corner_tube (-y, -z):
+- mesh: "corner_tube.gltf"
+  rotation: { x: -90, y: 90, z: 0 }
+  openings:
+    - { x: 0, y: -1, z: 0 }
+    - { x: 0, y: 0, z: -1 }
