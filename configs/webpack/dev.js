@@ -1,10 +1,7 @@
 /* eslint-disable */
 
 const { merge } = require('webpack-merge');
-const { DefinePlugin } = require('webpack');
 const commonConfig = require('./');
-
-const ASSET_PATH = process.env.ASSET_PATH || '/';
 
 module.exports = merge(commonConfig, {
   mode: 'development',
@@ -19,11 +16,6 @@ module.exports = merge(commonConfig, {
     static: ['./src', './public'],
   },
   output: {
-    publicPath: ASSET_PATH
+    publicPath: '/'
   },
-  plugins: [
-    new DefinePlugin({
-      'process.env.ASSET_PATH' : JSON.stringify(ASSET_PATH)
-    })
-  ]
 });
