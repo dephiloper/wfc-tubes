@@ -7,7 +7,6 @@ import Loader from './utils/loader';
 import { throttle } from 'throttle-debounce';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-
 // red:   x
 // green: y
 // blue:  z
@@ -18,7 +17,6 @@ class Main {
   private renderer: THREE.WebGLRenderer;
   private clock: Clock = new Clock();
   private camera: OrthographicCamera;
-
   private group: THREE.Group;
 
   public async init(): Promise<void> {
@@ -52,7 +50,7 @@ class Main {
     this.renderer.render(this.scene, this.camera);
     
     const axesHelper = new THREE.AxesHelper(5);
-    const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    new OrbitControls(this.camera, this.renderer.domElement);
 
     this.group.add(axesHelper);
 
