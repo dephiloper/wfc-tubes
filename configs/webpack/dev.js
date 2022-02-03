@@ -18,4 +18,5 @@ module.exports = merge(commonConfig, {
   output: {
     publicPath: '/'
   },
+  devtool: "source-map"
 });

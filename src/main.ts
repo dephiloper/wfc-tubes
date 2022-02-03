@@ -11,7 +11,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 // green: y
 // blue:  z
 class Main {
-  private readonly GRID_SIZE: number = 6;
+  private readonly GRID_SIZE: number = 5;
   private readonly CAMERA_SIZE: number = 40;
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
@@ -45,10 +45,10 @@ class Main {
     this.camera.lookAt(0, 0, 0);
     this.camera.zoom = 1.0;
     this.camera.updateProjectionMatrix();
-    
+
     this.scene.add(this.camera);
     this.renderer.render(this.scene, this.camera);
-    
+
     const axesHelper = new THREE.AxesHelper(5);
     new OrbitControls(this.camera, this.renderer.domElement);
 
@@ -57,6 +57,8 @@ class Main {
     this.setupLight();
 
     const model = new Model(new Vector3(this.GRID_SIZE, this.GRID_SIZE, this.GRID_SIZE));
+    this.renderGrid(model.size);
+
     const grid = await model.run();
     await this.renderModel(model, grid);
 
@@ -82,8 +84,21 @@ class Main {
     this.scene.add(dirLight);
   }
 
+  private renderGrid(size: THREE.Vector3) {
+    const spacing: number = 2;
+
+    for (let i = 0; i < size.x * size.y * size.z; i++) {
+      const geometry = new THREE.BoxBufferGeometry(1.9, 1.9, 1.9);
+      const material = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, opacity: 0.05, transparent: true });
+      const mesh = new THREE.Mesh(geometry, material);
+      const p = ToPosition(size, i);
+      mesh.position.add(p.multiplyScalar(spacing));
+      mesh.position.sub(new Vector3((size.x * spacing) / 2, (size.y * spacing) / 2, (size.z * spacing) / 2).subScalar(spacing/2));
+      this.group.add(mesh);
+    }
+  }
+
   private async renderModel(model: Model, grid: number[]): Promise<void> {
-    const offset: number = (model.size.x % 2 == 0) ? 0 : 0.5;
     const spacing: number = 2;
 
     for (let i = 0; i < grid.length; i++) {
@@ -91,9 +106,8 @@ class Main {
       if (prototype.mesh === "") continue;
       const mesh = await Loader.Instance.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
       const p = ToPosition(model.size, i);
-      p.sub(new Vector3(model.size.x / 2 + offset, model.size.y / 2 + offset, model.size.z / 2 + offset));
-
-      mesh.position.add(new Vector3(p.x * spacing, p.y * spacing, p.z * spacing));
+      mesh.position.add(p.multiplyScalar(spacing));
+      mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing/2));
       this.group.add(mesh);
     }
   }
@@ -101,7 +115,7 @@ class Main {
   private async process(): Promise<void> {
     const delta = this.clock.getDelta();
     this.renderer.render(this.scene, this.camera);
-    this.group.rotation.y += delta * 0.05;
+    // this.group.rotation.y += delta * 0.05;
   }
 }
 

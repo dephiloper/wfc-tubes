@@ -23,6 +23,14 @@ export function ToPosition(s: Vector3, i: number): Vector3 {
   return p;
 }
 
+export function IsBorderPosition(s: Vector3, p: Vector3): boolean {
+  return p.x === 0 || p.x === s.x - 1 || p.y === 0 || p.y === s.y - 1 || p.z === 0 || p.z === s.z - 1
+}
+
+export function outOfBounds(s: Vector3, p: Vector3): boolean {
+  return p.x < 0 || p.x > s.x - 1 || p.y < 0 || p.y > s.y - 1 || p.z < 0 || p.z > s.z - 1
+}
+
 // index = 1
 // 1 % 2 = 1
 // 1 * -2 = -2
@@ -31,20 +39,20 @@ export function InvertDirection(index: number): number {
   return index + (index % 2) * -2 + 1;
 }
 
-export function IndexToVec3(index: number): Vector3 {
+export function IndexToDirection(index: number): Vector3 {
   switch (index) {
     case 0:
       return new Vector3(-1, 0, 0);
     case 1:
-      return new Vector3(1, 0, 0);
+      return new Vector3(1, 0,  0);
     case 2:
-      return new Vector3(0, 1, 0);
-    case 3:
       return new Vector3(0, -1, 0);
+    case 3:
+      return new Vector3(0, 1,  0);
     case 4:
-      return new Vector3(0, 0, 1);
-    case 5:
       return new Vector3(0, 0, -1);
+    case 5:
+      return new Vector3(0, 0,  1);
     default:
       return new Vector3();
   }
@@ -56,7 +64,7 @@ export function IndexToVec3(index: number): Vector3 {
 // 3 -    0,   1,   0
 // 4 -    0,   0,  -1
 // 5 -    0,   0,   1
-export function Vec3ToIndex(vec3: Vector3): number {
+export function DirectionToIndex(vec3: Vector3): number {
   assert(vec3.length() === 1, "Vector should have length of 1.")
 
   if (vec3.x < 0) return 0;

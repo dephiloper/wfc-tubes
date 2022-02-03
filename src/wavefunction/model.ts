@@ -1,6 +1,6 @@
 import { Prototype } from "./../prototype";
 import { Vector3 } from "three";
-import { ToIndex, ToPosition, Vec3ToIndex } from "../utils/common";
+import { ToIndex, ToPosition, DirectionToIndex, IsBorderPosition, IndexToDirection, outOfBounds } from "../utils/common";
 import { WaveFunction } from "./wavefunction";
 import seedrandom from "seedrandom";
 import prng from " @types/prng";
@@ -17,14 +17,18 @@ export class Model {
   constructor(size: Vector3) {
     const seed = Math.random().toString();
     log.info(`Seed generated: ${seed}`);
-    this.rng = seedrandom.alea(seed);
+
     this.size = size;
+    this.rng = seedrandom.alea(seed);
   }
-  
+
   public async run(): Promise<number[]> {
     this.prototypes = await Loader.Instance.loadPrototypes();
     this.wf = new WaveFunction(this.prototypes, this.rng);
     await this.wf.initGrid(this.size);
+
+
+    this.constrainBorderTiles();
 
     while (!this.wf.isFullyCollapsed()) {
       this.iterate();
@@ -32,6 +36,40 @@ export class Model {
 
     log.info(`Generation process completed.`)
     return this.wf.grid.reduce((prev, next) => { return prev.concat(next); });
+  }
+
+  private constrainBorderTiles() {
+    let constraining: Map<number, Set<number>> = new Map<number, Set<number>>();
+
+    for (let i = 0; i < this.wf.grid.length; i++) {
+      const pos: Vector3 = ToPosition(this.size, i);
+
+      // check all positions in the grid that are on the border
+      if (IsBorderPosition(this.size, pos)) {
+        // go through all the tiles and check their openings
+        for (const tile of this.wf.grid[i]) {
+          const proto: Prototype = this.prototypes[tile];
+          for (const opening of proto.openings) {
+            const dir = IndexToDirection(opening);
+            const neighbor = pos.clone().add(dir);
+
+            // check if on the current position a possible tile would
+            // have an opening pointing to the border
+            // constrain the tile if so
+            if (outOfBounds(this.size, neighbor)) {
+              if (!constraining.get(i))
+                constraining.set(i, new Set<number>());
+              constraining.get(i)!.add(tile);
+            }
+          }
+        }
+      }
+    }
+
+    console.log("constraining", constraining);
+
+    constraining.forEach((tiles, index) => tiles.forEach(tile => this.wf.constrain(index, tile)));
+    constraining.forEach((tiles, index) => this.propagate(index));
   }
 
   private iterate() {
@@ -97,7 +135,7 @@ export class Model {
     const pos0: Vector3 = ToPosition(this.size, id0);
     const pos1: Vector3 = ToPosition(this.size, id1);
     const dirVec: Vector3 = pos1.clone().sub(pos0).normalize();
-    const dir: number = Vec3ToIndex(dirVec);
+    const dir: number = DirectionToIndex(dirVec);
     const proto0: Prototype = this.prototypes[tile0];
     const proto1: Prototype = this.prototypes[tile1];
 

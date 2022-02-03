@@ -23,7 +23,7 @@ export class WaveFunction {
 
     this.grid = new Array<number[]>();
 
-    if (this.weights.length === 0) this.weights = new Array(this.tiles.length).fill(2);
+    if (this.weights.length === 0) this.weights = new Array(this.tiles.length).fill(1);
 
     // prepare the voxel grid by entering all super positions 
     for (let i = 0; i < size.x * size.y * size.z; i++) this.grid[i] = [...this.tiles];
@@ -84,7 +84,7 @@ export class WaveFunction {
 
   public constrain(index: number, tile: number): void {
     const i = this.grid[index].indexOf(tile);
-    assert(i !== -1, "The tile that has to be constrained was not found.");
+    assert(i !== -1, `Tile ${tile} that has to be constrained was not found on index ${index}.`);
     this.grid[index].splice(i, 1);
 
     if (this.grid[index].length === 0) {

@@ -1,6 +1,6 @@
 import assert from "assert";
 import { Vector3 } from "three";
-import { InvertDirection, Vec3ToIndex } from "./utils/common";
+import { InvertDirection, DirectionToIndex } from "./utils/common";
 
 export class Prototype {
   id: number;
@@ -33,7 +33,7 @@ export class Prototype {
       prototype.mesh = objs[i].mesh;
       prototype.rotation = new Vector3(objs[i].rotation.x, objs[i].rotation.y, objs[i].rotation.z);
       for (const opening of objs[i].openings) {
-        let index: number = Vec3ToIndex(new Vector3(opening.x, opening.y, opening.z));
+        let index: number = DirectionToIndex(new Vector3(opening.x, opening.y, opening.z));
         prototype.openings.push(index);
       }
       prototypes.push(prototype);
