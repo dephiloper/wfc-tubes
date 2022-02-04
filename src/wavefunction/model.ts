@@ -1,6 +1,6 @@
 import { Prototype } from "./../prototype";
 import { Vector3 } from "three";
-import { ToIndex, ToPosition, DirectionToIndex, IsBorderPosition, IndexToDirection, outOfBounds } from "../utils/common";
+import { ToIndex, ToPosition, DirectionToIndex, IsBorderPosition, IndexToDirection, OutOfBounds } from "../utils/common";
 import { WaveFunction } from "./wavefunction";
 import seedrandom from "seedrandom";
 import prng from " @types/prng";
@@ -56,7 +56,7 @@ export class Model {
             // check if on the current position a possible tile would
             // have an opening pointing to the border
             // constrain the tile if so
-            if (outOfBounds(this.size, neighbor)) {
+            if (OutOfBounds(this.size, neighbor)) {
               if (!constraining.get(i))
                 constraining.set(i, new Set<number>());
               constraining.get(i)!.add(tile);
@@ -66,10 +66,8 @@ export class Model {
       }
     }
 
-    console.log("constraining", constraining);
-
     constraining.forEach((tiles, index) => tiles.forEach(tile => this.wf.constrain(index, tile)));
-    constraining.forEach((tiles, index) => this.propagate(index));
+    constraining.forEach((_, index) => this.propagate(index));
   }
 
   private iterate() {
