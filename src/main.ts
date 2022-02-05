@@ -11,7 +11,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 // green: y
 // blue:  z
 class Main {
-  private readonly GRID_SIZE: number = 5;
+  private readonly GRID_SIZE: number = 10;
   private readonly CAMERA_SIZE: number = 40;
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
@@ -101,6 +101,8 @@ class Main {
   private async renderModel(model: Model, grid: number[]): Promise<void> {
     const spacing: number = 2;
 
+    // grid = grid.map(id => id < 10 ? 0 : id);
+
     for (let i = 0; i < grid.length; i++) {
       const prototype = model.prototypes[grid[i]];
       if (prototype.mesh === "") continue;
@@ -110,6 +112,8 @@ class Main {
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing/2));
       this.group.add(mesh);
     }
+
+    console.log("group", this.group);
   }
 
   private async process(): Promise<void> {

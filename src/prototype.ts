@@ -51,13 +51,21 @@ export class Prototype {
         }
       }
 
-      p0.neighboringSides.forEach((side: number[], dir: number) => {
-        if (side.length === 0) {
-          Prototype.AddUniqueNeighbor(p0, prototypes[0], dir);
-          Prototype.AddUniqueNeighbor(prototypes[0], p0, InvertDirection(dir));
+      // TODO add description
+      p0.neighboringSides.forEach((neighbors: number[], dir: number) => {
+        if (neighbors.length === 0) {
+          const invertedDir: number = InvertDirection(dir);
+          for (const prototype of prototypes) {
+            if (!prototype.openings.includes(invertedDir)) {
+              Prototype.AddUniqueNeighbor(p0, prototype, dir);
+              Prototype.AddUniqueNeighbor(prototype, p0, invertedDir);
+            }
+          }
         }
       });
     }
+
+    console.log(prototypes);
 
     // check with assertion if created neighbors have a fitting counterpart
     for (const p0 of prototypes) {
