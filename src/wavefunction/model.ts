@@ -22,13 +22,21 @@ export class Model {
     this.rng = seedrandom.alea(seed);
   }
 
-  public async run(): Promise<number[]> {
+  public async run(noWhiteSpace: boolean = false, constrainBorder: boolean = true, fullyConnected: boolean = true, terminalAtBorder: boolean = false): Promise<number[]> {
     this.prototypes = await Loader.Instance.loadPrototypes();
     this.wf = new WaveFunction(this.prototypes, this.rng);
     await this.wf.initGrid(this.size);
 
+    if (constrainBorder) this.constrainBorderTiles();
 
-    this.constrainBorderTiles();
+    if (fullyConnected) {
+      this.defineTerminalPositions(terminalAtBorder);
+      // if all tubes should be connected, only allow connecting tubes
+      // removing prototype 4 to 9
+      this.wf.restrictTiles(4, 6);
+    }
+
+    this.wf.initWeights(noWhiteSpace);
 
     while (!this.wf.isFullyCollapsed()) {
       this.iterate();
@@ -70,6 +78,21 @@ export class Model {
     constraining.forEach((_, index) => this.propagate(index));
   }
 
+  private defineTerminalPositions(terminalAtBorder: boolean, terminalCount: number = 2) {
+    const terminalPositions: number[] = Array.from({ length: terminalCount }, () => Math.floor(this.rng() * this.wf.grid.length));
+    const terminalTiles: number[] = [...this.prototypes.slice(4, 10)].map(p => p.id);
+
+    for (const p of terminalPositions) {
+      const possibleTiles: number[] = terminalTiles.filter(tile => this.wf.grid[p].includes(tile));
+      let tile: number = possibleTiles[Math.floor(Math.random() * possibleTiles.length)];
+      this.wf.collapse(p, tile!);
+      this.propagate(p);
+    }
+
+    const collapsedCount: number = this.wf.countCollapsed();
+    assert( collapsedCount === terminalCount, `The number of collapsed positions (${collapsedCount}) should match the terminal count (${terminalCount}).`);
+  }
+
   private iterate() {
     const index = this.minEntropyId();
     this.wf.collapse(index);
@@ -97,12 +120,12 @@ export class Model {
             assert(neighborTiles.length > 1, `The tile ${neighborTile} at position ${nIdx} is about to be constrained.`)
             this.wf.constrain(nIdx, neighborTile);
             stack.push(nIdx);
-
           }
         }
       }
     }
   }
+
   private checkTileCompatibility(cIdx: number, currentTiles: number[], nIdx: number, neighborTile: number): boolean {
     return currentTiles.some((currentTile: number) => { return this.checkCompatibility(cIdx, currentTile, nIdx, neighborTile) });
   }

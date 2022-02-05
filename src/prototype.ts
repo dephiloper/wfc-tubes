@@ -65,8 +65,6 @@ export class Prototype {
       });
     }
 
-    console.log(prototypes);
-
     // check with assertion if created neighbors have a fitting counterpart
     for (const p0 of prototypes) {
       p0.neighboringSides.forEach((side: number[], direction) => {
