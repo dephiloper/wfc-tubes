@@ -3,3 +3,13 @@ canvas {
     height: 100vh;
     display: block;
 }
+
+body {
+    display: flex;
+    justify-content: center;
+    margin: 0; 
+    overflow: hidden; 
+    position: fixed; 
+    touch-action: none; 
+    background-color: black;
+} 
