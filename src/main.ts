@@ -7,6 +7,7 @@ import Loader from './utils/loader';
 import { throttle } from 'throttle-debounce';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GenConfig, UI } from './utils/ui';
+import { AssertionError } from 'assert';
 
 // red:   x
 // green: y
@@ -73,23 +74,23 @@ class Main {
   }
 
   public async generate(config: GenConfig): Promise<void> {
-    if (this.model) {
-      this.disposeModel();
-    }
+    if (this.model) this.disposeModel();
     this.model = new Model(config.seed, new Vector3(config.gridSize, config.gridSize, config.gridSize));
 
     let grid;
 
     for (let i = 0; i < 5; i++) {
       try {
-        log.info(`Iteration #${i+1}`);
+        log.info(`Starting iteration #${i + 1}`);
         grid = await this.model.run(true);
         await this.renderModel(this.model, grid);
         break;
       } catch (error: any) {
-        log.info(`Collision happened! Restarting generation.`);
-        log.debug("Error:");
-        log.debug(error);
+        if (error instanceof AssertionError) {
+          log.info(`Collision happened! Restarting generation.`);
+          log.debug("Error:");
+          log.debug(error);
+        }
       }
     }
 
