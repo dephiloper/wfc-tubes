@@ -14,8 +14,7 @@ export class Model {
   private wf: WaveFunction;
   private rng: prng;
 
-  constructor(size: Vector3) {
-    const seed = Math.random().toString();
+  constructor(seed: string, size: Vector3) {
     log.info(`Seed generated: ${seed}`);
 
     this.size = size;
@@ -79,12 +78,15 @@ export class Model {
   }
 
   private defineTerminalPositions(terminalAtBorder: boolean, terminalCount: number = 2) {
-    const terminalPositions: number[] = Array.from({ length: terminalCount }, () => Math.floor(this.rng() * this.wf.grid.length));
+    const terminalPositions = new Set<number>();
+    while (terminalPositions.size < terminalCount) {
+      terminalPositions.add(Math.floor(this.rng() * this.wf.grid.length));
+    }    
     const terminalTiles: number[] = [...this.prototypes.slice(4, 10)].map(p => p.id);
 
     for (const p of terminalPositions) {
       const possibleTiles: number[] = terminalTiles.filter(tile => this.wf.grid[p].includes(tile));
-      let tile: number = possibleTiles[Math.floor(Math.random() * possibleTiles.length)];
+      let tile: number = possibleTiles[Math.floor(this.rng() * possibleTiles.length)];
       this.wf.collapse(p, tile!);
       this.propagate(p);
     }

@@ -75,3 +75,5 @@ export function DirectionToIndex(dir: Vector3): number {
   return index;
 }
 
+export const RandomSeed = (): string => Math.random().toString(16).substring(2, 8);
+
