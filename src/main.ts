@@ -6,7 +6,7 @@ import log from 'loglevel';
 import Loader from './utils/loader';
 import { throttle } from 'throttle-debounce';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GenConfig, UI } from './utils/ui';
+import { GenConfig, PresConfig, UI } from './utils/ui';
 import { AssertionError } from 'assert';
 
 // red:   x
@@ -23,6 +23,7 @@ class Main {
   private ui: UI;
   private model: Model | null;
   private modelMesh: THREE.Group;
+  private presConf: PresConfig = new PresConfig();
 
   public async init(): Promise<void> {
     log.setLevel(log.levels.DEBUG);
@@ -52,6 +53,13 @@ class Main {
 
     this.ui.onGenerate = async (config: GenConfig) => this.generate(config);
     this.ui.onGenButton();
+
+    this.ui.onPresentationChanged = async (partial: Partial<PresConfig>) => {
+      this.presConf = {
+        ...this.presConf,
+        ...partial
+      };
+    }
   }
 
   private setupCamera() {
@@ -78,12 +86,12 @@ class Main {
     if (this.model) this.disposeModel();
     this.model = new Model(config.seed, new Vector3(config.gridSize, config.gridSize, config.gridSize));
 
-    let grid;
+    let grid: Array<number>;
 
     for (let i = 0; i < 5; i++) {
       try {
         log.info(`Starting iteration #${i + 1}`);
-        grid = await this.model.run(true);
+        grid = await this.model.run(config);
         await this.renderModel(this.model, grid);
         break;
       } catch (error: any) {
@@ -141,7 +149,7 @@ class Main {
   private async process(): Promise<void> {
     const delta = this.clock.getDelta();
     this.renderer.render(this.scene, this.camera);
-    // this.group.rotation.y += delta * 0.05;
+    if (this.presConf.autoRotate) this.group.rotation.y += delta * 0.05;
   }
 }
 

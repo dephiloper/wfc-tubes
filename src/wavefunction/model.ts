@@ -7,6 +7,7 @@ import prng from " @types/prng";
 import assert from "assert";
 import log from "loglevel";
 import Loader from "../utils/loader";
+import { GenConfig } from "utils/ui";
 
 export class Model {
   public size: Vector3;
@@ -21,27 +22,28 @@ export class Model {
     this.rng = seedrandom.alea(seed);
   }
 
-  public async run(noWhiteSpace: boolean = false, constrainBorder: boolean = true, fullyConnected: boolean = true, terminalAtBorder: boolean = false): Promise<number[]> {
+  public async run(config: GenConfig): Promise<number[]> {
+    const startTime: number = + new Date();
     this.prototypes = await Loader.Instance.loadPrototypes();
     this.wf = new WaveFunction(this.prototypes, this.rng);
     await this.wf.initGrid(this.size);
 
-    if (constrainBorder) this.constrainBorderTiles();
+    if (config.constrainBorder) this.constrainBorderTiles();
 
-    if (fullyConnected) {
-      this.defineTerminalPositions(terminalAtBorder);
+    if (config.fullyConnected) {
+      this.defineTerminalPositions(config.terminalAtBorder);
       // if all tubes should be connected, only allow connecting tubes
       // removing prototype 4 to 9
       this.wf.restrictTiles(4, 6);
     }
 
-    this.wf.initWeights(noWhiteSpace);
+    this.wf.initWeights(config.noWhiteSpace);
 
     while (!this.wf.isFullyCollapsed()) {
       this.iterate();
     }
 
-    log.info(`Generation process completed.`)
+    log.info(`Generation process completed in ${new Date((+ new Date()) - startTime).toISOString().slice(14,-1)}.`);
     return this.wf.grid.reduce((prev, next) => { return prev.concat(next); });
   }
 
