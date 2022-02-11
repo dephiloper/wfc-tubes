@@ -7,7 +7,6 @@ import Loader from './utils/loader';
 import { throttle } from 'throttle-debounce';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GenConfig, UI } from './utils/ui';
-import { TpEvent } from '@tweakpane/core';
 
 // red:   x
 // green: y
@@ -77,11 +76,24 @@ class Main {
     if (this.model) {
       this.disposeModel();
     }
-    // this.renderGrid(model.size);
     this.model = new Model(config.seed, new Vector3(config.gridSize, config.gridSize, config.gridSize));
 
-    const grid = await this.model.run(true);
-    await this.renderModel(this.model, grid);
+    let grid;
+
+    for (let i = 0; i < 5; i++) {
+      try {
+        log.info(`Iteration #${i+1}`);
+        grid = await this.model.run(true);
+        await this.renderModel(this.model, grid);
+        break;
+      } catch (error: any) {
+        log.info(`Collision happened! Restarting generation.`);
+        log.debug("Error:");
+        log.debug(error);
+      }
+    }
+
+    this.ui.generationCompleted();
   }
 
   public resize(): void {
@@ -100,20 +112,6 @@ class Main {
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
     dirLight.position.set(75, 300, -75);
     this.camera.add(dirLight);
-  }
-
-  private renderGrid(size: THREE.Vector3) {
-    const spacing: number = 2;
-
-    for (let i = 0; i < size.x * size.y * size.z; i++) {
-      const geometry = new THREE.BoxBufferGeometry(1.9, 1.9, 1.9);
-      const material = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, opacity: 0.05, transparent: true });
-      const mesh = new THREE.Mesh(geometry, material);
-      const p = ToPosition(size, i);
-      mesh.position.add(p.multiplyScalar(spacing));
-      mesh.position.sub(new Vector3((size.x * spacing) / 2, (size.y * spacing) / 2, (size.z * spacing) / 2).subScalar(spacing / 2));
-      this.group.add(mesh);
-    }
   }
 
   private async renderModel(model: Model, grid: number[]): Promise<void> {
