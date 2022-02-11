@@ -51,6 +51,7 @@ class Main {
     this.scene.add(this.group);
 
     this.ui.onGenerate = async (config: GenConfig) => this.generate(config);
+    this.ui.onGenButton();
   }
 
   private setupCamera() {

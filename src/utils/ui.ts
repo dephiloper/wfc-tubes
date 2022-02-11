@@ -1,4 +1,4 @@
-import { TpChangeEvent, TpEvent } from "@tweakpane/core";
+import { ButtonApi, InputBindingApi, TpChangeEvent, TpEvent } from "@tweakpane/core";
 import { Pane } from "tweakpane";
 import { RandomSeed } from "./common";
 
@@ -13,9 +13,9 @@ const GEN_OPTS = {
 export class UI {
     public onGenerate: (config: GenConfig) => void;
     private pane: Pane;
-    private config: GenConfig;
-    private seedInput: any;
-    private genButton: any;
+    public config: GenConfig;
+    private seedInput: InputBindingApi<any, any>    ;
+    private genButton: ButtonApi;
 
     constructor() {
         const parent = document.createElement("div");
@@ -53,17 +53,7 @@ export class UI {
 
         this.genButton = tab.pages[0].addButton(GEN_OPTS);
 
-        this.genButton.on("click", (_: TpEvent) => {
-            this.genButton.disabled = true;
-            GEN_OPTS.title = "Generating...";
-            if (this.seedInput.disabled) {
-                SEED_OPTS.seed = RandomSeed();
-                this.config.seed = SEED_OPTS.seed;
-                this.seedInput.refresh();
-            }
-
-            this.onGenerate(this.config);
-        });
+        this.genButton.on("click", (_: TpEvent) => this.onGenButton());
 
 
         this.seedInput.on("change", (event: TpChangeEvent<string>) => this.config.seed = event.value);
@@ -72,6 +62,17 @@ export class UI {
 
         tab.pages[0].addInput({ gridSize: this.config.gridSize }, 'gridSize', { step: 1, min: 2, max: 20 })
             .on("change", (event: TpChangeEvent<number>) => this.config.gridSize = event.value);
+    }
+
+    public onGenButton() {
+        this.genButton.disabled = true;
+        if (this.seedInput.disabled) {
+            SEED_OPTS.seed = RandomSeed();
+            this.config.seed = SEED_OPTS.seed;
+            this.seedInput.refresh();
+        }
+
+        this.onGenerate(this.config);
     }
 
     public generationCompleted() {
