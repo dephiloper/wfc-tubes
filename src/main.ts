@@ -13,16 +13,15 @@ import { AssertionError } from 'assert';
 // green: y
 // blue:  z
 class Main {
-  private readonly GRID_SIZE: number = 5;
   private readonly CAMERA_SIZE: number = 40;
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
   private clock: Clock = new Clock();
   private camera: OrthographicCamera;
-  private group: THREE.Group;
+  private parent: THREE.Group;
   private ui: UI;
-  private model: Model | null;
-  private modelMesh: THREE.Group;
+  private model: Model;
+  private modelGroup: THREE.Group;
   private presConf: PresConfig = new PresConfig();
 
   public async init(): Promise<void> {
@@ -31,8 +30,8 @@ class Main {
 
     this.ui = new UI();
     this.scene = new THREE.Scene();
-    this.group = new THREE.Group();
-    this.modelMesh = new THREE.Group();
+    this.parent = new THREE.Group();
+    this.modelGroup = new THREE.Group();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -44,12 +43,12 @@ class Main {
     new OrbitControls(this.camera, this.renderer.domElement);
 
     const axesHelper = new THREE.AxesHelper(5);
-    this.group.add(axesHelper);
+    this.parent.add(axesHelper);
 
     this.setupLight();
 
     this.renderer.setAnimationLoop(async () => await this.process());
-    this.scene.add(this.group);
+    this.scene.add(this.parent);
 
     this.ui.onGenerate = async (config: GenConfig) => this.generate(config);
     this.ui.onGenButton();
@@ -83,6 +82,9 @@ class Main {
   }
 
   public async generate(config: GenConfig): Promise<void> {
+    log.info(`- Generation process started.`);
+    const startTime: number = + new Date();
+
     if (this.model) this.disposeModel();
     this.model = new Model(config.seed, new Vector3(config.gridSize, config.gridSize, config.gridSize));
 
@@ -91,19 +93,20 @@ class Main {
     for (let i = 0; i < 5; i++) {
       try {
         log.info(`Starting iteration #${i + 1}`);
+        console.log("model", this.model);
         grid = await this.model.run(config);
         await this.renderModel(this.model, grid);
         break;
       } catch (error: any) {
         if (error instanceof AssertionError) {
           log.info(`Collision happened! Restarting generation.`);
-          log.debug("Error:");
-          log.debug(error);
+          log.debug("Error", error);
         }
       }
     }
 
     this.ui.generationCompleted();
+    log.debug(`- Generation process completed in ${new Date((+ new Date()) - startTime).toISOString().slice(14, -1)}.`);
   }
 
   public resize(): void {
@@ -134,22 +137,21 @@ class Main {
       const p = ToPosition(model.size, i);
       mesh.position.add(p.multiplyScalar(spacing));
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));
-      this.modelMesh.add(mesh);
+      this.modelGroup.add(mesh);
+      this.parent.add(this.modelGroup);
     }
 
-    this.group.add(this.modelMesh);
   }
 
   private disposeModel() {
-    this.model = null;
-    this.group.remove(this.modelMesh);
-    this.modelMesh = new THREE.Group();
+    this.parent.remove(this.modelGroup);
+    this.modelGroup = new THREE.Group();
   }
 
   private async process(): Promise<void> {
     const delta = this.clock.getDelta();
     this.renderer.render(this.scene, this.camera);
-    if (this.presConf.autoRotate) this.group.rotation.y += delta * 0.05;
+    if (this.presConf.autoRotate) this.parent.rotation.y += delta * 0.05;
   }
 }
 
