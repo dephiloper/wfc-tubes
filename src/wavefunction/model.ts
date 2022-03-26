@@ -5,7 +5,6 @@ import { WaveFunction } from "./wavefunction";
 import seedrandom from "seedrandom";
 import prng from " @types/prng";
 import assert from "assert";
-import log from "loglevel";
 import Loader from "../utils/loader";
 import { GenConfig } from "utils/ui";
 
@@ -14,18 +13,18 @@ export class Model {
   public prototypes: Prototype[];
   private wf: WaveFunction;
   private rng: prng;
+  private iterativeGrid: [number, number][];
 
   constructor(seed: string, size: Vector3) {
-    log.info(`Seed generated: ${seed}`);
-
     this.size = size;
     this.rng = seedrandom.alea(seed);
+    this.iterativeGrid = new Array<[number, number]>();
   }
 
-  public async run(config: GenConfig): Promise<number[]> {
-    const startTime: number = + new Date();
+  public async run(config: GenConfig): Promise<[number[], [number, number][]]> {
     this.prototypes = await Loader.Instance.loadPrototypes();
     this.wf = new WaveFunction(this.prototypes, this.rng);
+    this.wf.gridChanged = this.gridChanged.bind(this);
     await this.wf.initGrid(this.size);
 
     if (config.constrainBorder) this.constrainBorderTiles();
@@ -43,8 +42,11 @@ export class Model {
       this.iterate();
     }
 
-    log.info(`Generation process completed in ${new Date((+ new Date()) - startTime).toISOString().slice(14,-1)}.`);
-    return this.wf.grid.reduce((prev, next) => { return prev.concat(next); });
+    return [this.wf.grid.reduce((prev, next) => { return prev.concat(next); }), this.iterativeGrid];
+  }
+
+  private gridChanged(index: number, tile: number) {
+    this.iterativeGrid.push([index, tile]);
   }
 
   private constrainBorderTiles() {
@@ -178,7 +180,7 @@ export class Model {
     for (let i = 0; i < this.size.x * this.size.y * this.size.z; i++) {
       if (this.wf.grid[i].length === 1) continue; // skip over already collapsed grid positions
 
-      const simpleEntropy = this.wf.simpleEntropy(i);
+      const simpleEntropy = this.connectionOnlyEntropy(i);
       const noisedEntropy: number = simpleEntropy - (this.rng() / 1000);
       if (noisedEntropy < minEntropy) {
         minEntropy = noisedEntropy;
@@ -189,4 +191,24 @@ export class Model {
     assert(minEntropyId !== -1, "No min entropy id found!");
     return minEntropyId;
   }
+
+  // TODO check this function
+  private connectionOnlyEntropy(id: number): number {
+    const pos: Vector3 = ToPosition(this.size, id);
+    const neighbors: number[] = this.findNeighbors(id);
+    for (const neighbor of neighbors) {
+      const neighborPos: Vector3 = ToPosition(this.size, neighbor);
+      const dir: Vector3 = pos.clone().sub(neighborPos);
+      const dirIndex: number = DirectionToIndex(dir);
+      if (this.wf.grid[neighbor].length === 1) {
+        const proto: Prototype = this.prototypes[this.wf.grid[neighbor][0]];
+        if (proto.openings.includes(dirIndex)) {
+          return 1;
+        }
+      }
+    }
+
+    return Number.MAX_SAFE_INTEGER;
+  }
+
 }

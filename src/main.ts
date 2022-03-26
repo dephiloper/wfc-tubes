@@ -88,14 +88,16 @@ class Main {
     if (this.model) this.disposeModel();
     this.model = new Model(config.seed, new Vector3(config.gridSize, config.gridSize, config.gridSize));
 
-    let grid: Array<number>;
+    let grid: number[];
+    let iterativeGrid: [number, number][];
 
     for (let i = 0; i < 5; i++) {
       try {
         log.info(`Starting iteration #${i + 1}`);
         console.log("model", this.model);
-        grid = await this.model.run(config);
-        await this.renderModel(this.model, grid);
+        [grid, iterativeGrid] = await this.model.run(config);
+        // await this.renderModel(this.model, grid);
+        await this.renderModelIterative(this.model, iterativeGrid);
         break;
       } catch (error: any) {
         if (error instanceof AssertionError) {
@@ -138,9 +140,26 @@ class Main {
       mesh.position.add(p.multiplyScalar(spacing));
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));
       this.modelGroup.add(mesh);
+    }
+    this.parent.add(this.modelGroup);
+  }
+
+  private async renderModelIterative(model: Model, iterativeGrid: [number, number][]): Promise<void> {
+    const spacing: number = 2;
+
+    for (let i = 0; i < iterativeGrid.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const index = iterativeGrid[i][0];
+      const tile = iterativeGrid[i][1];
+      const prototype = model.prototypes[tile];
+      if (prototype.mesh === "") continue;
+      const mesh = await Loader.Instance.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
+      const p = ToPosition(model.size, index);
+      mesh.position.add(p.multiplyScalar(spacing));
+      mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));
+      this.modelGroup.add(mesh);
       this.parent.add(this.modelGroup);
     }
-
   }
 
   private disposeModel() {

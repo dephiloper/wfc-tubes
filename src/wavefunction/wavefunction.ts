@@ -10,6 +10,8 @@ export class WaveFunction {
   private weights: number[];
   private rng: prng;
 
+  public gridChanged: (index: number, tile: number) => void;
+
   constructor(prototypes: Prototype[], rng: prng, weights?: number[]) {
     this.prototypes = prototypes;
     this.rng = rng;
@@ -98,14 +100,21 @@ export class WaveFunction {
     assert(pick !== -1, "The picked tile should not be -1.");
     assert(this.grid[index].includes(pick), `The picked tile (${pick}) does not exist in the grid at position ${index} (${this.grid[index]}).`);
     this.grid[index] = [pick];
+
+    // call interactive update
+    this.gridChanged(index, pick);
   }
 
   public constrain(index: number, tile: number): void {
     const i = this.grid[index].indexOf(tile);
     assert(i !== -1, `Tile ${tile} that has to be constrained was not found on index ${index}.`);
+    
     this.grid[index].splice(i, 1);
+    
+    assert(this.grid[index].length !== 0, `Grid at index ${index} is empty after constraining.`);
 
-    if (this.grid[index].length === 0) {
-    }
+    // call interactive update
+    if (this.grid[index].length === 1) this.gridChanged(index, this.grid[index][0]);
+
   }
 }
