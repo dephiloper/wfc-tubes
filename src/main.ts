@@ -33,7 +33,7 @@ class Main {
     this.parent = new THREE.Group();
     this.modelGroup = new THREE.Group();
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
@@ -50,7 +50,7 @@ class Main {
     this.renderer.setAnimationLoop(async () => await this.process());
     this.scene.add(this.parent);
 
-    this.ui.onGenerate = async (config: GenConfig) => this.generate(config);
+    this.ui.onGenerate = async (config: GenConfig) => await this.generate(config);
     this.ui.onGenButton();
 
     this.ui.onPresentationChanged = async (partial: Partial<PresConfig>) => {
@@ -82,6 +82,8 @@ class Main {
   }
 
   public async generate(config: GenConfig): Promise<void> {
+    document.body.style.backgroundColor = this.presConf.backgroundColor;
+
     log.info(`- Generation process started.`);
     const startTime: number = + new Date();
 
@@ -94,10 +96,11 @@ class Main {
     for (let i = 0; i < 5; i++) {
       try {
         log.info(`Starting iteration #${i + 1}`);
-        console.log("model", this.model);
         [grid, iterativeGrid] = await this.model.run(config);
-        // await this.renderModel(this.model, grid);
-        await this.renderModelIterative(this.model, iterativeGrid);
+        if (config.renderSpeed === 1)
+          await this.renderModel(this.model, grid);
+        else
+          await this.renderModelIterative(this.model, iterativeGrid, config.renderSpeed);
         break;
       } catch (error: any) {
         if (error instanceof AssertionError) {
@@ -136,6 +139,7 @@ class Main {
       const prototype = model.prototypes[grid[i]];
       if (prototype.mesh === "") continue;
       const mesh = await Loader.Instance.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
+      if (this.presConf.tint) (mesh.material as THREE.MeshBasicMaterial).color = new THREE.Color(this.presConf.tint);
       const p = ToPosition(model.size, i);
       mesh.position.add(p.multiplyScalar(spacing));
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));
@@ -143,17 +147,18 @@ class Main {
     }
     this.parent.add(this.modelGroup);
   }
-
-  private async renderModelIterative(model: Model, iterativeGrid: [number, number][]): Promise<void> {
+  
+  private async renderModelIterative(model: Model, iterativeGrid: [number, number][], renderSpeed: number): Promise<void> {
     const spacing: number = 2;
-
+    
     for (let i = 0; i < iterativeGrid.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 10 / renderSpeed));
       const index = iterativeGrid[i][0];
       const tile = iterativeGrid[i][1];
       const prototype = model.prototypes[tile];
       if (prototype.mesh === "") continue;
       const mesh = await Loader.Instance.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
+      if (this.presConf.tint) (mesh.material as THREE.MeshBasicMaterial).color = new THREE.Color(this.presConf.tint);
       const p = ToPosition(model.size, index);
       mesh.position.add(p.multiplyScalar(spacing));
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));
@@ -171,6 +176,7 @@ class Main {
     const delta = this.clock.getDelta();
     this.renderer.render(this.scene, this.camera);
     if (this.presConf.autoRotate) this.parent.rotation.y += delta * 0.05;
+
   }
 }
 

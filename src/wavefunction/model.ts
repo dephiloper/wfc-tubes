@@ -29,7 +29,7 @@ export class Model {
 
     if (config.constrainBorder) this.constrainBorderTiles();
 
-    if (config.fullyConnected) {
+    if (config.fullyConnectedPath) {
       this.defineTerminalPositions(config.terminalAtBorder);
       // if all tubes should be connected, only allow connecting tubes
       // removing prototype 4 to 9
@@ -180,7 +180,7 @@ export class Model {
     for (let i = 0; i < this.size.x * this.size.y * this.size.z; i++) {
       if (this.wf.grid[i].length === 1) continue; // skip over already collapsed grid positions
 
-      const simpleEntropy = this.connectionOnlyEntropy(i);
+      const simpleEntropy = this.wf.simpleEntropy(i);
       const noisedEntropy: number = simpleEntropy - (this.rng() / 1000);
       if (noisedEntropy < minEntropy) {
         minEntropy = noisedEntropy;

@@ -37,6 +37,7 @@ export class WaveFunction {
   public initWeights(noWhiteSpace: boolean) {
     if (this.weights.length !== this.tiles.length) this.weights = new Array(this.prototypes.length).fill(1);
 
+    this.weights[0] = 2;
     // if no whitespace should be enabled, set the wheight for the white space tile to 0
     if (noWhiteSpace) this.weights[0] = 0;
   }
