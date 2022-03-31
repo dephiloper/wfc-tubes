@@ -5,44 +5,48 @@ import { WaveFunction } from "./wavefunction";
 import seedrandom from "seedrandom";
 import prng from " @types/prng";
 import assert from "assert";
-import log from "loglevel";
 import Loader from "../utils/loader";
+import { GenConfig } from "utils/ui";
 
 export class Model {
   public size: Vector3;
   public prototypes: Prototype[];
   private wf: WaveFunction;
   private rng: prng;
+  private iterativeGrid: [number, number][];
 
   constructor(seed: string, size: Vector3) {
-    log.info(`Seed generated: ${seed}`);
-
     this.size = size;
     this.rng = seedrandom.alea(seed);
   }
 
-  public async run(noWhiteSpace: boolean = false, constrainBorder: boolean = true, fullyConnected: boolean = true, terminalAtBorder: boolean = false): Promise<number[]> {
+  public async run(config: GenConfig): Promise<[number[], [number, number][]]> {
+    this.iterativeGrid = new Array<[number, number]>();
     this.prototypes = await Loader.Instance.loadPrototypes();
     this.wf = new WaveFunction(this.prototypes, this.rng);
+    this.wf.gridChanged = this.gridChanged.bind(this);
     await this.wf.initGrid(this.size);
 
-    if (constrainBorder) this.constrainBorderTiles();
+    if (config.constrainBorder) this.constrainBorderTiles();
 
-    if (fullyConnected) {
-      this.defineTerminalPositions(terminalAtBorder);
+    if (config.fullyConnectedPath) {
+      this.defineTerminalPositions(config.terminalAtBorder);
       // if all tubes should be connected, only allow connecting tubes
       // removing prototype 4 to 9
       this.wf.restrictTiles(4, 6);
     }
 
-    this.wf.initWeights(noWhiteSpace);
+    this.wf.initWeights(config.noWhiteSpace);
 
     while (!this.wf.isFullyCollapsed()) {
       this.iterate();
     }
 
-    log.info(`Generation process completed.`)
-    return this.wf.grid.reduce((prev, next) => { return prev.concat(next); });
+    return [this.wf.grid.reduce((prev, next) => { return prev.concat(next); }), this.iterativeGrid];
+  }
+
+  private gridChanged(index: number, tile: number) {
+    this.iterativeGrid.push([index, tile]);
   }
 
   private constrainBorderTiles() {
@@ -187,4 +191,24 @@ export class Model {
     assert(minEntropyId !== -1, "No min entropy id found!");
     return minEntropyId;
   }
+
+  // TODO check this function
+  private connectionOnlyEntropy(id: number): number {
+    const pos: Vector3 = ToPosition(this.size, id);
+    const neighbors: number[] = this.findNeighbors(id);
+    for (const neighbor of neighbors) {
+      const neighborPos: Vector3 = ToPosition(this.size, neighbor);
+      const dir: Vector3 = pos.clone().sub(neighborPos);
+      const dirIndex: number = DirectionToIndex(dir);
+      if (this.wf.grid[neighbor].length === 1) {
+        const proto: Prototype = this.prototypes[this.wf.grid[neighbor][0]];
+        if (proto.openings.includes(dirIndex)) {
+          return 1;
+        }
+      }
+    }
+
+    return Number.MAX_SAFE_INTEGER;
+  }
+
 }
