@@ -42,8 +42,8 @@ class Main {
 
     new OrbitControls(this.camera, this.renderer.domElement);
 
-    const axesHelper = new THREE.AxesHelper(5);
-    this.parent.add(axesHelper);
+    // const axesHelper = new THREE.AxesHelper(5);
+    // this.parent.add(axesHelper);
 
     this.setupLight();
 
@@ -106,6 +106,7 @@ class Main {
         if (error instanceof AssertionError) {
           log.info(`Collision happened! Restarting generation.`);
           log.debug("Error", error);
+          iterativeGrid = new Array<[number, number]>();
         }
       }
     }
@@ -133,13 +134,14 @@ class Main {
   }
 
   private async renderModel(model: Model, grid: number[]): Promise<void> {
+    const tint = this.presConf.tint;
     const spacing: number = 2;
 
     for (let i = 0; i < grid.length; i++) {
       const prototype = model.prototypes[grid[i]];
       if (prototype.mesh === "") continue;
       const mesh = await Loader.Instance.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
-      if (this.presConf.tint) (mesh.material as THREE.MeshBasicMaterial).color = new THREE.Color(this.presConf.tint);
+      if (tint) (mesh.material as THREE.MeshBasicMaterial).color = new THREE.Color(tint);
       const p = ToPosition(model.size, i);
       mesh.position.add(p.multiplyScalar(spacing));
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));
@@ -149,16 +151,17 @@ class Main {
   }
   
   private async renderModelIterative(model: Model, iterativeGrid: [number, number][], renderSpeed: number): Promise<void> {
+    const tint = this.presConf.tint;
     const spacing: number = 2;
     
     for (let i = 0; i < iterativeGrid.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 10 / renderSpeed));
+      await new Promise(resolve => setTimeout(resolve, 5 / renderSpeed));
       const index = iterativeGrid[i][0];
       const tile = iterativeGrid[i][1];
       const prototype = model.prototypes[tile];
       if (prototype.mesh === "") continue;
       const mesh = await Loader.Instance.loadMesh(`models/${prototype.mesh}`, prototype.rotation);
-      if (this.presConf.tint) (mesh.material as THREE.MeshBasicMaterial).color = new THREE.Color(this.presConf.tint);
+      if (tint) (mesh.material as THREE.MeshBasicMaterial).color = new THREE.Color(tint);
       const p = ToPosition(model.size, index);
       mesh.position.add(p.multiplyScalar(spacing));
       mesh.position.sub(new Vector3((model.size.x * spacing) / 2, (model.size.y * spacing) / 2, (model.size.z * spacing) / 2).subScalar(spacing / 2));

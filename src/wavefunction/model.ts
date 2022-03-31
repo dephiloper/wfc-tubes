@@ -18,10 +18,10 @@ export class Model {
   constructor(seed: string, size: Vector3) {
     this.size = size;
     this.rng = seedrandom.alea(seed);
-    this.iterativeGrid = new Array<[number, number]>();
   }
 
   public async run(config: GenConfig): Promise<[number[], [number, number][]]> {
+    this.iterativeGrid = new Array<[number, number]>();
     this.prototypes = await Loader.Instance.loadPrototypes();
     this.wf = new WaveFunction(this.prototypes, this.rng);
     this.wf.gridChanged = this.gridChanged.bind(this);
